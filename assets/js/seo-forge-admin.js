@@ -46,6 +46,9 @@
             // Analytics
             $('#date_range').on('change', this.handleDateRangeChange.bind(this));
 
+            // API Testing
+            $('#test-seo-forge-api').on('click', this.handleTestAPI.bind(this));
+
             // Character counters
             $('#seo_forge_meta_title').on('input', this.updateTitleCounter.bind(this));
             $('#seo_forge_meta_description').on('input', this.updateDescriptionCounter.bind(this));
@@ -457,6 +460,53 @@
         handleDateRangeChange(e) {
             const days = $(e.target).val();
             this.loadAnalyticsData(days);
+        }
+
+        /**
+         * Handle API testing
+         */
+        handleTestAPI(e) {
+            e.preventDefault();
+            
+            const $button = $(e.target);
+            const $result = $('#api-test-result');
+            
+            // Show loading state
+            $button.prop('disabled', true).text('Testing...');
+            $result.html('<div class="notice notice-info"><p>Testing SEO-Forge API connection...</p></div>');
+            
+            const data = {
+                action: 'seo_forge_test_api',
+                nonce: seoForgeAjax.nonce
+            };
+
+            $.post(seoForgeAjax.ajaxurl, data)
+                .done((response) => {
+                    if (response.success) {
+                        $result.html(`
+                            <div class="notice notice-success">
+                                <p><strong>${response.data.message}</strong></p>
+                                ${response.data.sample_content ? `<p><em>Sample content:</em> ${response.data.sample_content}</p>` : ''}
+                            </div>
+                        `);
+                    } else {
+                        $result.html(`
+                            <div class="notice notice-error">
+                                <p><strong>${response.data.message}</strong></p>
+                            </div>
+                        `);
+                    }
+                })
+                .fail((xhr, status, error) => {
+                    $result.html(`
+                        <div class="notice notice-error">
+                            <p><strong>API test failed:</strong> ${error}</p>
+                        </div>
+                    `);
+                })
+                .always(() => {
+                    $button.prop('disabled', false).text('Test API Connection');
+                });
         }
 
         /**

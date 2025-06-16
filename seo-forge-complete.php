@@ -24,12 +24,22 @@ if (!defined('ABSPATH')) {
     exit('Direct access forbidden.');
 }
 
-// Plugin constants
-define('SEO_FORGE_VERSION', '2.0.0');
-define('SEO_FORGE_FILE', __FILE__);
-define('SEO_FORGE_PATH', plugin_dir_path(__FILE__));
-define('SEO_FORGE_URL', plugin_dir_url(__FILE__));
-define('SEO_FORGE_BASENAME', plugin_basename(__FILE__));
+// Plugin constants (only if not already defined)
+if (!defined('SEO_FORGE_VERSION')) {
+    define('SEO_FORGE_VERSION', '2.0.0');
+}
+if (!defined('SEO_FORGE_FILE')) {
+    define('SEO_FORGE_FILE', __FILE__);
+}
+if (!defined('SEO_FORGE_PATH')) {
+    define('SEO_FORGE_PATH', plugin_dir_path(__FILE__));
+}
+if (!defined('SEO_FORGE_URL')) {
+    define('SEO_FORGE_URL', plugin_dir_url(__FILE__));
+}
+if (!defined('SEO_FORGE_BASENAME')) {
+    define('SEO_FORGE_BASENAME', plugin_basename(__FILE__));
+}
 
 /**
  * Main SEO Forge Plugin Class
@@ -62,6 +72,7 @@ class SEOForgeComplete {
         add_action('wp_ajax_seo_forge_analyze_content', [$this, 'ajax_analyze_content']);
         add_action('wp_ajax_seo_forge_get_analytics', [$this, 'ajax_get_analytics']);
         add_action('wp_ajax_seo_forge_save_settings', [$this, 'ajax_save_settings']);
+        add_action('wp_ajax_seo_forge_test_api', [$this, 'ajax_test_api']);
         
         // Cron jobs
         add_action('seo_forge_daily_analytics', [$this, 'daily_analytics_sync']);
@@ -867,8 +878,21 @@ class SEOForgeComplete {
         echo '<table class="form-table">';
         
         echo '<tr>';
-        echo '<th><label for="openai_api_key">' . __('OpenAI API Key', 'seo-forge') . '</label></th>';
-        echo '<td><input type="password" id="openai_api_key" name="openai_api_key" value="' . esc_attr($this->get_option('openai_api_key', '')) . '" class="regular-text" /></td>';
+        echo '<th>' . __('SEO-Forge API', 'seo-forge') . '</th>';
+        echo '<td>';
+        echo '<p class="description">' . __('✅ Primary content generation API (No API key required)', 'seo-forge') . '<br>';
+        echo __('Powered by https://seo-forge.bitebase.app', 'seo-forge') . '</p>';
+        echo '<button type="button" id="test-seo-forge-api" class="button button-secondary">' . __('Test API Connection', 'seo-forge') . '</button>';
+        echo '<div id="api-test-result" style="margin-top: 10px;"></div>';
+        echo '</td>';
+        echo '</tr>';
+        
+        echo '<tr>';
+        echo '<th><label for="openai_api_key">' . __('OpenAI API Key (Optional)', 'seo-forge') . '</label></th>';
+        echo '<td>';
+        echo '<input type="password" id="openai_api_key" name="openai_api_key" value="' . esc_attr($this->get_option('openai_api_key', '')) . '" class="regular-text" />';
+        echo '<p class="description">' . __('Optional fallback API when SEO-Forge API is unavailable', 'seo-forge') . '</p>';
+        echo '</td>';
         echo '</tr>';
         
         echo '<tr>';
@@ -1092,12 +1116,116 @@ class SEOForgeComplete {
         wp_send_json_success(['message' => __('Settings saved successfully', 'seo-forge')]);
     }
     
+    public function ajax_test_api() {
+        check_ajax_referer('seo_forge_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Insufficient permissions', 'seo-forge'));
+        }
+        
+        // Test the SEO-Forge API with a simple request
+        $test_content = $this->generate_seo_forge_content(
+            'WordPress SEO',
+            'SEO optimization, WordPress',
+            200,
+            'blog'
+        );
+        
+        if ($test_content) {
+            wp_send_json_success([
+                'message' => __('✅ SEO-Forge API is working correctly!', 'seo-forge'),
+                'sample_content' => substr($test_content, 0, 200) . '...',
+                'status' => 'success'
+            ]);
+        } else {
+            wp_send_json_error([
+                'message' => __('❌ SEO-Forge API test failed. Check error logs for details.', 'seo-forge'),
+                'status' => 'error'
+            ]);
+        }
+    }
+    
     // Core Functions
     private function generate_ai_content($topic, $keywords, $length, $type = 'blog') {
+        // Try SEO-Forge API first
+        $seo_forge_content = $this->generate_seo_forge_content($topic, $keywords, $length, $type);
+        if ($seo_forge_content) {
+            return $seo_forge_content;
+        }
+        
+        // Fallback to OpenAI if SEO-Forge API fails
+        $openai_content = $this->generate_openai_content($topic, $keywords, $length, $type);
+        if ($openai_content) {
+            return $openai_content;
+        }
+        
+        // Final fallback to templates
+        return $this->generate_fallback_content($topic, $keywords, $length, $type);
+    }
+    
+    private function generate_seo_forge_content($topic, $keywords, $length, $type = 'blog') {
+        $api_endpoint = 'https://seo-forge.bitebase.app/api/content/generate';
+        
+        // Test the API first with a simple request
+        $response = wp_remote_post($api_endpoint, [
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'User-Agent' => 'SEO-Forge-WordPress-Plugin/2.0.0',
+                'Accept' => 'application/json',
+            ],
+            'body' => wp_json_encode([
+                'topic' => sanitize_text_field($topic),
+                'keywords' => sanitize_text_field($keywords),
+                'length' => intval($length),
+                'type' => sanitize_text_field($type),
+                'language' => get_locale(),
+                'site_url' => home_url(),
+                'plugin_version' => '2.0.0'
+            ]),
+            'timeout' => 30,
+            'sslverify' => true,
+        ]);
+        
+        if (is_wp_error($response)) {
+            // Log the error for debugging
+            error_log('SEO-Forge API Error: ' . $response->get_error_message());
+            return false;
+        }
+        
+        $response_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        
+        // Log response for debugging
+        error_log('SEO-Forge API Response Code: ' . $response_code);
+        error_log('SEO-Forge API Response Body: ' . $body);
+        
+        if ($response_code !== 200) {
+            return false;
+        }
+        
+        $data = json_decode($body, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log('SEO-Forge API JSON Error: ' . json_last_error_msg());
+            return false;
+        }
+        
+        if (isset($data['content']) && !empty($data['content'])) {
+            return $data['content'];
+        }
+        
+        if (isset($data['data']['content']) && !empty($data['data']['content'])) {
+            return $data['data']['content'];
+        }
+        
+        return false;
+    }
+    
+    private function generate_openai_content($topic, $keywords, $length, $type = 'blog') {
         $api_key = $this->get_option('openai_api_key', '');
         
         if (empty($api_key)) {
-            return $this->generate_fallback_content($topic, $keywords, $length, $type);
+            return false;
         }
         
         $prompt = $this->build_ai_prompt($topic, $keywords, $length, $type);
@@ -1119,7 +1247,7 @@ class SEOForgeComplete {
         ]);
         
         if (is_wp_error($response)) {
-            return $this->generate_fallback_content($topic, $keywords, $length, $type);
+            return false;
         }
         
         $body = wp_remote_retrieve_body($response);
@@ -1129,7 +1257,7 @@ class SEOForgeComplete {
             return $data['choices'][0]['message']['content'];
         }
         
-        return $this->generate_fallback_content($topic, $keywords, $length, $type);
+        return false;
     }
     
     private function generate_fallback_content($topic, $keywords, $length, $type) {
