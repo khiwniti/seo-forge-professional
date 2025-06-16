@@ -693,54 +693,34 @@ class SEOForgeComplete {
     
     private function render_generator_tab() {
         echo '<div class="seo-forge-generator">';
-
-        // Generator Type Selector
-        echo '<div class="seo-forge-generator-tabs">';
-        echo '<button type="button" class="generator-tab-btn active" data-tab="content">' . __('Content Generator', 'seo-forge') . '</button>';
-        echo '<button type="button" class="generator-tab-btn" data-tab="image">' . __('Image Generator', 'seo-forge') . '</button>';
-        echo '<button type="button" class="generator-tab-btn" data-tab="blog-with-image">' . __('Blog + Image', 'seo-forge') . '</button>';
-        echo '</div>';
-
-        // Content Generator Tab
-        echo '<div id="content-generator-tab" class="generator-tab-content active">';
-        echo '<h3>' . __('AI Content Generator', 'seo-forge') . '</h3>';
+        
         echo '<form id="content-generator-form" class="seo-forge-form">';
         wp_nonce_field('seo_forge_generate', 'seo_forge_generate_nonce');
-
+        
         echo '<table class="form-table">';
-
+        
         echo '<tr>';
         echo '<th><label for="content_topic">' . __('Topic', 'seo-forge') . '</label></th>';
-        echo '<td><input type="text" id="content_topic" name="topic" class="regular-text" required placeholder="' . __('e.g., Digital Marketing for Small Businesses', 'seo-forge') . '" /></td>';
+        echo '<td><input type="text" id="content_topic" name="topic" class="regular-text" required /></td>';
         echo '</tr>';
-
+        
         echo '<tr>';
         echo '<th><label for="content_keywords">' . __('Keywords', 'seo-forge') . '</label></th>';
-        echo '<td><input type="text" id="content_keywords" name="keywords" class="regular-text" placeholder="' . __('e.g., digital marketing, small business, online marketing', 'seo-forge') . '" /></td>';
+        echo '<td><input type="text" id="content_keywords" name="keywords" class="regular-text" placeholder="' . __('Comma-separated keywords', 'seo-forge') . '" /></td>';
         echo '</tr>';
-
-        echo '<tr>';
-        echo '<th><label for="content_language">' . __('Language', 'seo-forge') . '</label></th>';
-        echo '<td>';
-        echo '<select id="content_language" name="language">';
-        echo '<option value="auto">' . __('Auto-detect', 'seo-forge') . '</option>';
-        echo '<option value="en">' . __('English', 'seo-forge') . '</option>';
-        echo '<option value="th">' . __('Thai (ไทย)', 'seo-forge') . '</option>';
-        echo '</select>';
-        echo '</td>';
-        echo '</tr>';
-
+        
         echo '<tr>';
         echo '<th><label for="content_length">' . __('Content Length', 'seo-forge') . '</label></th>';
         echo '<td>';
         echo '<select id="content_length" name="length">';
-        echo '<option value="short">' . __('Short (400-600 words)', 'seo-forge') . '</option>';
-        echo '<option value="medium" selected>' . __('Medium (800-1200 words)', 'seo-forge') . '</option>';
-        echo '<option value="long">' . __('Long (1500-2500 words)', 'seo-forge') . '</option>';
+        echo '<option value="300">' . __('Short (300 words)', 'seo-forge') . '</option>';
+        echo '<option value="500" selected>' . __('Medium (500 words)', 'seo-forge') . '</option>';
+        echo '<option value="1000">' . __('Long (1000 words)', 'seo-forge') . '</option>';
+        echo '<option value="1500">' . __('Very Long (1500 words)', 'seo-forge') . '</option>';
         echo '</select>';
         echo '</td>';
         echo '</tr>';
-
+        
         echo '<tr>';
         echo '<th><label for="content_type">' . __('Content Type', 'seo-forge') . '</label></th>';
         echo '<td>';
@@ -752,27 +732,15 @@ class SEOForgeComplete {
         echo '</select>';
         echo '</td>';
         echo '</tr>';
-
-        echo '<tr>';
-        echo '<th><label for="content_tone">' . __('Tone', 'seo-forge') . '</label></th>';
-        echo '<td>';
-        echo '<select id="content_tone" name="tone">';
-        echo '<option value="professional">' . __('Professional', 'seo-forge') . '</option>';
-        echo '<option value="casual">' . __('Casual', 'seo-forge') . '</option>';
-        echo '<option value="friendly">' . __('Friendly', 'seo-forge') . '</option>';
-        echo '<option value="authoritative">' . __('Authoritative', 'seo-forge') . '</option>';
-        echo '</select>';
-        echo '</td>';
-        echo '</tr>';
-
+        
         echo '</table>';
-
+        
         echo '<p class="submit">';
         echo '<button type="submit" class="button button-primary">' . __('Generate Content', 'seo-forge') . '</button>';
         echo '</p>';
-
+        
         echo '</form>';
-
+        
         echo '<div id="generated-content" class="seo-forge-generated-content" style="display:none;">';
         echo '<h3>' . __('Generated Content', 'seo-forge') . '</h3>';
         echo '<div id="content-preview"></div>';
@@ -782,125 +750,10 @@ class SEOForgeComplete {
         echo '<button type="button" id="regenerate-content" class="button">' . __('Regenerate', 'seo-forge') . '</button>';
         echo '</p>';
         echo '</div>';
+        
         echo '</div>';
-
-        // Image Generator Tab
-        echo '<div id="image-generator-tab" class="generator-tab-content">';
-        echo '<h3>' . __('AI Image Generator', 'seo-forge') . '</h3>';
-        echo '<form id="image-generator-form" class="seo-forge-form">';
-        wp_nonce_field('seo_forge_generate', 'seo_forge_image_nonce');
-
-        echo '<table class="form-table">';
-
-        echo '<tr>';
-        echo '<th><label for="image_prompt">' . __('Image Description', 'seo-forge') . '</label></th>';
-        echo '<td>';
-        echo '<textarea id="image_prompt" name="prompt" class="large-text" rows="3" required placeholder="' . __('Describe the image you want to generate...', 'seo-forge') . '"></textarea>';
-        echo '<p class="description">' . __('Be specific about style, colors, composition, and subject matter.', 'seo-forge') . '</p>';
-        echo '</td>';
-        echo '</tr>';
-
-        echo '<tr>';
-        echo '<th><label for="image_style">' . __('Style', 'seo-forge') . '</label></th>';
-        echo '<td>';
-        echo '<select id="image_style" name="style">';
-        echo '<option value="professional">' . __('Professional', 'seo-forge') . '</option>';
-        echo '<option value="modern">' . __('Modern', 'seo-forge') . '</option>';
-        echo '<option value="minimalist">' . __('Minimalist', 'seo-forge') . '</option>';
-        echo '<option value="creative">' . __('Creative', 'seo-forge') . '</option>';
-        echo '<option value="photorealistic">' . __('Photorealistic', 'seo-forge') . '</option>';
-        echo '<option value="illustration">' . __('Illustration', 'seo-forge') . '</option>';
-        echo '</select>';
-        echo '</td>';
-        echo '</tr>';
-
-        echo '<tr>';
-        echo '<th><label for="image_size">' . __('Size', 'seo-forge') . '</label></th>';
-        echo '<td>';
-        echo '<select id="image_size" name="size">';
-        echo '<option value="1024x1024">' . __('Square (1024x1024)', 'seo-forge') . '</option>';
-        echo '<option value="1792x1024">' . __('Landscape (1792x1024)', 'seo-forge') . '</option>';
-        echo '<option value="1024x1792">' . __('Portrait (1024x1792)', 'seo-forge') . '</option>';
-        echo '</select>';
-        echo '</td>';
-        echo '</tr>';
-
-        echo '</table>';
-
-        echo '<p class="submit">';
-        echo '<button type="submit" class="button button-primary">' . __('Generate Image', 'seo-forge') . '</button>';
-        echo '</p>';
-
-        echo '</form>';
-
-        echo '<div id="generated-image" class="seo-forge-generated-image" style="display:none;">';
-        echo '<h3>' . __('Generated Image', 'seo-forge') . '</h3>';
-        echo '<div id="image-preview"></div>';
-        echo '<p>';
-        echo '<button type="button" id="save-generated-image" class="button button-primary">' . __('Save to Media Library', 'seo-forge') . '</button>';
-        echo '<button type="button" id="regenerate-image" class="button">' . __('Regenerate', 'seo-forge') . '</button>';
-        echo '</p>';
-        echo '</div>';
-        echo '</div>';
-
-        // Blog with Image Generator Tab
-        echo '<div id="blog-with-image-tab" class="generator-tab-content">';
-        echo '<h3>' . __('Blog Post + Image Generator', 'seo-forge') . '</h3>';
-        echo '<form id="blog-with-image-form" class="seo-forge-form">';
-        wp_nonce_field('seo_forge_generate', 'seo_forge_blog_image_nonce');
-
-        echo '<table class="form-table">';
-
-        echo '<tr>';
-        echo '<th><label for="blog_topic">' . __('Blog Topic', 'seo-forge') . '</label></th>';
-        echo '<td><input type="text" id="blog_topic" name="topic" class="regular-text" required placeholder="' . __('e.g., Best SEO Practices for 2024', 'seo-forge') . '" /></td>';
-        echo '</tr>';
-
-        echo '<tr>';
-        echo '<th><label for="blog_keywords">' . __('Keywords', 'seo-forge') . '</label></th>';
-        echo '<td><input type="text" id="blog_keywords" name="keywords" class="regular-text" placeholder="' . __('e.g., SEO, best practices, 2024', 'seo-forge') . '" /></td>';
-        echo '</tr>';
-
-        echo '<tr>';
-        echo '<th><label for="blog_length">' . __('Content Length', 'seo-forge') . '</label></th>';
-        echo '<td>';
-        echo '<select id="blog_length" name="length">';
-        echo '<option value="short">' . __('Short (400-600 words)', 'seo-forge') . '</option>';
-        echo '<option value="medium" selected>' . __('Medium (800-1200 words)', 'seo-forge') . '</option>';
-        echo '<option value="long">' . __('Long (1500-2500 words)', 'seo-forge') . '</option>';
-        echo '</select>';
-        echo '</td>';
-        echo '</tr>';
-
-        echo '<tr>';
-        echo '<th><label for="include_image">' . __('Include Images', 'seo-forge') . '</label></th>';
-        echo '<td>';
-        echo '<label><input type="checkbox" id="include_image" name="include_image" checked /> ' . __('Generate featured image automatically', 'seo-forge') . '</label>';
-        echo '</td>';
-        echo '</tr>';
-
-        echo '</table>';
-
-        echo '<p class="submit">';
-        echo '<button type="submit" class="button button-primary">' . __('Generate Blog + Image', 'seo-forge') . '</button>';
-        echo '</p>';
-
-        echo '</form>';
-
-        echo '<div id="generated-blog-with-image" class="seo-forge-generated-blog-image" style="display:none;">';
-        echo '<h3>' . __('Generated Blog Post with Image', 'seo-forge') . '</h3>';
-        echo '<div id="blog-image-preview"></div>';
-        echo '<div id="blog-content-preview"></div>';
-        echo '<div id="blog-stats"></div>';
-        echo '<p>';
-        echo '<button type="button" id="save-generated-blog-image" class="button button-primary">' . __('Save as Draft', 'seo-forge') . '</button>';
-        echo '<button type="button" id="regenerate-blog-image" class="button">' . __('Regenerate', 'seo-forge') . '</button>';
-        echo '</p>';
-        echo '</div>';
-        echo '</div>';
-
-        echo '</div>';
-    }    
+    }
+    
     private function render_analytics_tab() {
         echo '<div class="seo-forge-analytics">';
         

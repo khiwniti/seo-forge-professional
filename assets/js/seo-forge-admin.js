@@ -24,6 +24,9 @@
                 this.initCharacterCounters();
                 this.initCharts();
                 this.initTooltips();
+                this.initGeneratorTabs();
+                this.handleImageGeneration();
+                this.handleSaveGeneratedImage();
                 
                 // Only load analytics data if we're on the analytics tab
                 const currentTab = this.getCurrentTab();
@@ -926,6 +929,129 @@
                 clearTimeout(timeout);
                 timeout = setTimeout(later, wait);
             };
+        }
+
+        /**
+         * Initialize Generator Tabs
+         */
+        initGeneratorTabs() {
+            // Generator tab switching
+            $(document).on('click', '.generator-tab-btn', function(e) {
+                e.preventDefault();
+                
+                const tabId = $(this).data('tab');
+                
+                // Update tab buttons
+                $('.generator-tab-btn').removeClass('active');
+                $(this).addClass('active');
+                
+                // Update tab content
+                $('.generator-tab-content').removeClass('active');
+                $('#' + tabId + '-generator-tab').addClass('active');
+            });
+        }
+
+        /**
+         * Handle Image Generation
+         */
+        handleImageGeneration() {
+            $(document).on('submit', '#image-generator-form', (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const $form = $(e.target);
+                const $submitBtn = $form.find('button[type="submit"]');
+                const $preview = $('#image-preview');
+                const $container = $('#generated-image');
+                
+                // Show loading state
+                $submitBtn.prop('disabled', true).text('Generating...');
+                $preview.html('<div class="image-loading">Generating your image...</div>');
+                $container.show();
+                
+                // Prepare request data
+                const requestData = {
+                    action: 'seo_forge_generate_image',
+                    nonce: formData.get('seo_forge_image_nonce'),
+                    prompt: formData.get('prompt'),
+                    style: formData.get('style'),
+                    size: formData.get('size')
+                };
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: requestData,
+                    timeout: 60000, // 60 seconds timeout
+                    success: (response) => {
+                        if (response.success && response.data.image_url) {
+                            $preview.html(`
+                                <img src="${response.data.image_url}" alt="Generated Image" />
+                                <p><strong>Prompt:</strong> ${requestData.prompt}</p>
+                            `);
+                            
+                            // Store image data for saving
+                            $('#save-generated-image').data('image-data', response.data);
+                        } else {
+                            $preview.html(`
+                                <div class="notice notice-error">
+                                    <p>Error: ${response.data?.message || 'Failed to generate image'}</p>
+                                </div>
+                            `);
+                        }
+                    },
+                    error: (xhr, status, error) => {
+                        console.error('Image generation error:', error);
+                        $preview.html(`
+                            <div class="notice notice-error">
+                                <p>Error: Failed to generate image. Please try again.</p>
+                            </div>
+                        `);
+                    },
+                    complete: () => {
+                        $submitBtn.prop('disabled', false).text('Generate Image');
+                    }
+                });
+            });
+        }
+
+        /**
+         * Handle Save Generated Image
+         */
+        handleSaveGeneratedImage() {
+            $(document).on('click', '#save-generated-image', function() {
+                const imageData = $(this).data('image-data');
+                if (!imageData) {
+                    alert('No image data to save');
+                    return;
+                }
+                
+                const $btn = $(this);
+                $btn.prop('disabled', true).text('Saving...');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'seo_forge_save_generated_image',
+                        nonce: $('#seo_forge_image_nonce').val(),
+                        image_data: imageData
+                    },
+                    success: (response) => {
+                        if (response.success) {
+                            alert('Image saved to media library successfully!');
+                        } else {
+                            alert('Error saving image: ' + (response.data?.message || 'Unknown error'));
+                        }
+                    },
+                    error: () => {
+                        alert('Error saving image. Please try again.');
+                    },
+                    complete: () => {
+                        $btn.prop('disabled', false).text('Save to Media Library');
+                    }
+                });
+            });
         }
     }
 
