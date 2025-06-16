@@ -73,7 +73,10 @@ class SEOForgeComplete {
         add_action('wp_ajax_seo_forge_get_analytics', [$this, 'ajax_get_analytics']);
         add_action('wp_ajax_seo_forge_save_settings', [$this, 'ajax_save_settings']);
         add_action('wp_ajax_seo_forge_test_api', [$this, 'ajax_test_api']);
+        add_action('wp_ajax_seo_forge_health_check', [$this, 'ajax_health_check']);
         add_action('wp_ajax_seo_forge_save_generated_content', [$this, 'ajax_save_generated_content']);
+        add_action('wp_ajax_seo_forge_generate_image', [$this, 'ajax_generate_image']);
+        add_action('wp_ajax_seo_forge_generate_blog_with_image', [$this, 'ajax_generate_blog_with_image']);
         
         // Admin interface customization
         add_action('admin_notices', [$this, 'show_seo_content_notice']);
@@ -1213,6 +1216,125 @@ class SEOForgeComplete {
         ]);
     }
     
+    public function ajax_generate_image() {
+        check_ajax_referer('seo_forge_nonce', 'nonce');
+        
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Insufficient permissions', 'seo-forge'));
+        }
+        
+        $prompt = sanitize_text_field($_POST['prompt'] ?? '');
+        $style = sanitize_text_field($_POST['style'] ?? 'professional');
+        $size = sanitize_text_field($_POST['size'] ?? '1024x1024');
+        
+        if (empty($prompt)) {
+            wp_send_json_error(['message' => __('Image prompt is required', 'seo-forge')]);
+        }
+        
+        $image_url = $this->generate_image_with_api($prompt, $style, $size);
+        
+        if ($image_url) {
+            wp_send_json_success([
+                'image_url' => $image_url,
+                'message' => __('Image generated successfully!', 'seo-forge')
+            ]);
+        } else {
+            wp_send_json_error([
+                'message' => __('Failed to generate image. Please try again.', 'seo-forge')
+            ]);
+        }
+    }
+    
+    public function ajax_generate_blog_with_image() {
+        check_ajax_referer('seo_forge_nonce', 'nonce');
+        
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Insufficient permissions', 'seo-forge'));
+        }
+        
+        $topic = sanitize_text_field($_POST['topic'] ?? '');
+        $keywords = sanitize_text_field($_POST['keywords'] ?? '');
+        $length = sanitize_text_field($_POST['length'] ?? 'medium');
+        $include_image = isset($_POST['include_image']) ? (bool) $_POST['include_image'] : true;
+        
+        if (empty($topic)) {
+            wp_send_json_error(['message' => __('Topic is required', 'seo-forge')]);
+        }
+        
+        $result = $this->generate_blog_with_image($topic, $keywords, $length, $include_image);
+        
+        if ($result && $result['content']) {
+            wp_send_json_success([
+                'content' => $result['content'],
+                'image_url' => $result['image_url'],
+                'seo_score' => $result['seo_score'],
+                'suggestions' => $result['suggestions'],
+                'word_count' => str_word_count($result['content']),
+                'message' => __('Blog with image generated successfully!', 'seo-forge')
+            ]);
+        } else {
+            wp_send_json_error([
+                'message' => __('Failed to generate blog content. Please try again.', 'seo-forge')
+            ]);
+        }
+    }
+    
+    public function ajax_health_check() {
+        check_ajax_referer('seo_forge_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Insufficient permissions', 'seo-forge'));
+        }
+        
+        $api_base = 'https://seo-forge.bitebase.app';
+        $health_endpoints = [
+            '/health',
+            '/mcp/status',
+            '/universal-mcp/status'
+        ];
+        
+        $results = [];
+        
+        foreach ($health_endpoints as $endpoint) {
+            $api_endpoint = $api_base . $endpoint;
+            
+            $response = wp_remote_get($api_endpoint, [
+                'headers' => [
+                    'User-Agent' => 'SEO-Forge-WordPress-Plugin/2.0.1',
+                    'Accept' => 'application/json',
+                    'X-Client-ID' => 'wordpress-plugin'
+                ],
+                'timeout' => 10,
+                'sslverify' => true,
+            ]);
+            
+            if (is_wp_error($response)) {
+                $results[$endpoint] = [
+                    'status' => 'error',
+                    'message' => $response->get_error_message()
+                ];
+            } else {
+                $response_code = wp_remote_retrieve_response_code($response);
+                $response_body = wp_remote_retrieve_body($response);
+                
+                $results[$endpoint] = [
+                    'status' => $response_code === 200 ? 'success' : 'error',
+                    'code' => $response_code,
+                    'response' => $response_body
+                ];
+            }
+        }
+        
+        // Test a simple API call
+        $test_result = $this->generate_seo_forge_content('Test', 'test keyword', 'short', 'blog');
+        
+        wp_send_json_success([
+            'health_checks' => $results,
+            'api_test' => $test_result ? 'success' : 'failed',
+            'timestamp' => current_time('mysql')
+        ]);
+    }
+    
     // Core Functions
     private function generate_ai_content($topic, $keywords, $length, $type = 'blog') {
         // Try SEO-Forge API first
@@ -1232,27 +1354,85 @@ class SEOForgeComplete {
     }
     
     private function generate_seo_forge_content($topic, $keywords, $length, $type = 'blog') {
-        $api_endpoint = 'https://seo-forge.bitebase.app/api/content/generate';
+        // Updated API endpoints based on SEOForge MCP Server backend-express
+        $api_base = 'https://seo-forge.bitebase.app';
         
-        // Test the API first with a simple request
-        $response = wp_remote_post($api_endpoint, [
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'User-Agent' => 'SEO-Forge-WordPress-Plugin/2.0.0',
-                'Accept' => 'application/json',
-            ],
-            'body' => wp_json_encode([
-                'topic' => sanitize_text_field($topic),
-                'keywords' => sanitize_text_field($keywords),
-                'length' => intval($length),
-                'type' => sanitize_text_field($type),
-                'language' => get_locale(),
-                'site_url' => home_url(),
-                'plugin_version' => '2.0.0'
-            ]),
-            'timeout' => 30,
-            'sslverify' => true,
-        ]);
+        // Convert keywords string to array if needed
+        $keywords_array = is_string($keywords) ? explode(',', $keywords) : (array) $keywords;
+        $keywords_array = array_map('trim', $keywords_array);
+        
+        // Map length to API format
+        $length_map = [
+            'short' => 'short',
+            'medium' => 'medium', 
+            'long' => 'long'
+        ];
+        $api_length = $length_map[$length] ?? 'medium';
+        
+        // Try the correct API endpoints from backend-express
+        $endpoints = [
+            '/api/blog-generator/generate',           // Legacy API endpoint
+            '/universal-mcp/generate-content',        // Universal MCP endpoint
+            '/universal-mcp/generate-blog-with-images', // Blog with images
+            '/mcp/tools/execute'                      // Direct MCP tool execution
+        ];
+        
+        foreach ($endpoints as $endpoint) {
+            $api_endpoint = $api_base . $endpoint;
+            
+            // Prepare request body based on endpoint
+            if ($endpoint === '/mcp/tools/execute') {
+                $request_body = [
+                    'tool' => 'generate_content',
+                    'arguments' => [
+                        'type' => $type,
+                        'topic' => $topic,
+                        'keywords' => $keywords_array,
+                        'language' => substr(get_locale(), 0, 2),
+                        'tone' => 'professional',
+                        'length' => $api_length
+                    ]
+                ];
+            } else {
+                $request_body = [
+                    'topic' => $topic,
+                    'keywords' => $keywords_array,
+                    'length' => $api_length,
+                    'tone' => 'professional',
+                    'language' => substr(get_locale(), 0, 2),
+                    'content_type' => $type,
+                    'include_images' => false // Start with text only
+                ];
+            }
+            
+            $response = wp_remote_post($api_endpoint, [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'User-Agent' => 'SEO-Forge-WordPress-Plugin/2.0.1',
+                    'Accept' => 'application/json',
+                    'X-Plugin-Version' => '2.0.1',
+                    'X-WordPress-Site' => home_url(),
+                    'X-Client-ID' => 'wordpress-plugin'
+                ],
+                'body' => wp_json_encode($request_body),
+                'timeout' => 60,
+                'sslverify' => true,
+            ]);
+            
+            // If this endpoint works, break and process the response
+            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                break;
+            }
+            
+            // Log failed attempts for debugging
+            if (is_wp_error($response)) {
+                error_log("SEO-Forge API Error for endpoint {$endpoint}: " . $response->get_error_message());
+            } else {
+                $response_code = wp_remote_retrieve_response_code($response);
+                $response_body = wp_remote_retrieve_body($response);
+                error_log("SEO-Forge API HTTP Error for endpoint {$endpoint}: Code {$response_code}, Body: {$response_body}");
+            }
+        }
         
         if (is_wp_error($response)) {
             // Log the error for debugging
@@ -1284,6 +1464,264 @@ class SEOForgeComplete {
         
         if (isset($data['data']['content']) && !empty($data['data']['content'])) {
             return $data['data']['content'];
+        }
+        
+        return false;
+    }
+    
+    /**
+     * SEO Analysis API call
+     */
+    private function analyze_content_with_api($content, $keywords, $url = '') {
+        $api_base = 'https://seo-forge.bitebase.app';
+        
+        // Convert keywords to array if needed
+        $keywords_array = is_string($keywords) ? explode(',', $keywords) : (array) $keywords;
+        $keywords_array = array_map('trim', $keywords_array);
+        
+        $endpoints = [
+            '/api/seo-analyzer/analyze',      // Legacy API endpoint
+            '/universal-mcp/analyze-seo',     // Universal MCP endpoint
+            '/mcp/tools/execute'              // Direct MCP tool execution
+        ];
+        
+        foreach ($endpoints as $endpoint) {
+            $api_endpoint = $api_base . $endpoint;
+            
+            // Prepare request body based on endpoint
+            if ($endpoint === '/mcp/tools/execute') {
+                $request_body = [
+                    'tool' => 'analyze_seo',
+                    'arguments' => [
+                        'content' => $content,
+                        'keywords' => $keywords_array,
+                        'url' => $url
+                    ]
+                ];
+            } else {
+                $request_body = [
+                    'content' => $content,
+                    'keywords' => $keywords_array,
+                    'url' => $url
+                ];
+            }
+            
+            $response = wp_remote_post($api_endpoint, [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'User-Agent' => 'SEO-Forge-WordPress-Plugin/2.0.1',
+                    'Accept' => 'application/json',
+                    'X-Plugin-Version' => '2.0.1',
+                    'X-WordPress-Site' => home_url(),
+                    'X-Client-ID' => 'wordpress-plugin'
+                ],
+                'body' => wp_json_encode($request_body),
+                'timeout' => 30,
+                'sslverify' => true,
+            ]);
+            
+            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                $body = wp_remote_retrieve_body($response);
+                $data = json_decode($body, true);
+                
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    // Handle different response formats
+                    if (isset($data['analysis'])) {
+                        return $data['analysis'];
+                    } elseif (isset($data['result'])) {
+                        return $data['result'];
+                    } elseif (isset($data['content'])) {
+                        return $data['content'];
+                    }
+                }
+                break;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Image Generation API call
+     */
+    private function generate_image_with_api($prompt, $style = 'professional', $size = '1024x1024') {
+        $api_base = 'https://seo-forge.bitebase.app';
+        
+        $endpoints = [
+            '/api/flux-image-gen/generate',       // Legacy API endpoint
+            '/universal-mcp/generate-image',      // Universal MCP endpoint
+            '/universal-mcp/generate-flux-image', // Flux image generation
+            '/mcp/tools/execute'                  // Direct MCP tool execution
+        ];
+        
+        foreach ($endpoints as $endpoint) {
+            $api_endpoint = $api_base . $endpoint;
+            
+            // Prepare request body based on endpoint
+            if ($endpoint === '/mcp/tools/execute') {
+                $request_body = [
+                    'tool' => 'generate_image',
+                    'arguments' => [
+                        'prompt' => $prompt,
+                        'style' => $style,
+                        'size' => $size,
+                        'model' => 'flux'
+                    ]
+                ];
+            } else {
+                $request_body = [
+                    'prompt' => $prompt,
+                    'style' => $style,
+                    'size' => $size,
+                    'count' => 1
+                ];
+            }
+            
+            $response = wp_remote_post($api_endpoint, [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'User-Agent' => 'SEO-Forge-WordPress-Plugin/2.0.1',
+                    'Accept' => 'application/json',
+                    'X-Plugin-Version' => '2.0.1',
+                    'X-WordPress-Site' => home_url(),
+                    'X-Client-ID' => 'wordpress-plugin'
+                ],
+                'body' => wp_json_encode($request_body),
+                'timeout' => 90,
+                'sslverify' => true,
+            ]);
+            
+            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                $body = wp_remote_retrieve_body($response);
+                $data = json_decode($body, true);
+                
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    // Handle different response formats
+                    if (isset($data['image_url'])) {
+                        return $data['image_url'];
+                    } elseif (isset($data['result']['image_url'])) {
+                        return $data['result']['image_url'];
+                    } elseif (isset($data['content']['image_url'])) {
+                        return $data['content']['image_url'];
+                    } elseif (isset($data['images']) && is_array($data['images']) && !empty($data['images'])) {
+                        return $data['images'][0]['url'] ?? $data['images'][0];
+                    }
+                }
+                break;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Blog Generation with Image API call
+     */
+    private function generate_blog_with_image($topic, $keywords, $length, $include_image = true) {
+        $api_base = 'https://seo-forge.bitebase.app';
+        
+        // Convert keywords to array if needed
+        $keywords_array = is_string($keywords) ? explode(',', $keywords) : (array) $keywords;
+        $keywords_array = array_map('trim', $keywords_array);
+        
+        // Map length to API format
+        $length_map = [
+            'short' => 'short',
+            'medium' => 'medium', 
+            'long' => 'long'
+        ];
+        $api_length = $length_map[$length] ?? 'medium';
+        
+        $endpoints = [
+            '/universal-mcp/generate-blog-with-images', // Primary endpoint for blog with images
+            '/api/blog-generator/generate',             // Legacy API endpoint
+            '/mcp/tools/execute'                        // Direct MCP tool execution
+        ];
+        
+        foreach ($endpoints as $endpoint) {
+            $api_endpoint = $api_base . $endpoint;
+            
+            // Prepare request body based on endpoint
+            if ($endpoint === '/mcp/tools/execute') {
+                $request_body = [
+                    'tool' => 'generate_content',
+                    'arguments' => [
+                        'type' => 'blog',
+                        'topic' => $topic,
+                        'keywords' => $keywords_array,
+                        'language' => substr(get_locale(), 0, 2),
+                        'tone' => 'professional',
+                        'length' => $api_length,
+                        'include_images' => $include_image
+                    ]
+                ];
+            } else {
+                $request_body = [
+                    'topic' => $topic,
+                    'keywords' => $keywords_array,
+                    'length' => $api_length,
+                    'tone' => 'professional',
+                    'language' => substr(get_locale(), 0, 2),
+                    'content_type' => 'blog_post',
+                    'include_images' => $include_image,
+                    'image_count' => $include_image ? 3 : 0,
+                    'image_style' => 'professional'
+                ];
+            }
+            
+            $response = wp_remote_post($api_endpoint, [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'User-Agent' => 'SEO-Forge-WordPress-Plugin/2.0.1',
+                    'Accept' => 'application/json',
+                    'X-Plugin-Version' => '2.0.1',
+                    'X-WordPress-Site' => home_url(),
+                    'X-Client-ID' => 'wordpress-plugin'
+                ],
+                'body' => wp_json_encode($request_body),
+                'timeout' => 120,
+                'sslverify' => true,
+            ]);
+            
+            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                $body = wp_remote_retrieve_body($response);
+                $data = json_decode($body, true);
+                
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    // Handle different response formats
+                    $result = [
+                        'content' => null,
+                        'image_url' => null,
+                        'seo_score' => null,
+                        'suggestions' => []
+                    ];
+                    
+                    if (isset($data['content'])) {
+                        $result['content'] = $data['content'];
+                    } elseif (isset($data['result']['content'])) {
+                        $result['content'] = $data['result']['content'];
+                    }
+                    
+                    if (isset($data['image_url'])) {
+                        $result['image_url'] = $data['image_url'];
+                    } elseif (isset($data['images']) && is_array($data['images']) && !empty($data['images'])) {
+                        $result['image_url'] = $data['images'][0]['url'] ?? $data['images'][0];
+                    }
+                    
+                    if (isset($data['seo_score'])) {
+                        $result['seo_score'] = $data['seo_score'];
+                    }
+                    
+                    if (isset($data['suggestions'])) {
+                        $result['suggestions'] = $data['suggestions'];
+                    }
+                    
+                    if ($result['content']) {
+                        return $result;
+                    }
+                }
+                break;
+            }
         }
         
         return false;
@@ -1373,6 +1811,13 @@ class SEOForgeComplete {
     }
     
     private function analyze_content_seo($content, $keyword) {
+        // Try API analysis first
+        $api_analysis = $this->analyze_content_with_api($content, $keyword);
+        if ($api_analysis) {
+            return $api_analysis;
+        }
+        
+        // Fallback to local analysis
         $analysis = [
             'score' => 0,
             'issues' => [],
