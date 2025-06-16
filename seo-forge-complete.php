@@ -74,6 +74,7 @@ class SEOForgeComplete {
         add_action('wp_ajax_seo_forge_save_settings', [$this, 'ajax_save_settings']);
         add_action('wp_ajax_seo_forge_test_api', [$this, 'ajax_test_api']);
         add_action('wp_ajax_seo_forge_health_check', [$this, 'ajax_health_check']);
+        add_action('wp_ajax_seo_forge_get_progress', [$this, 'ajax_get_progress']);
         add_action('wp_ajax_seo_forge_save_generated_content', [$this, 'ajax_save_generated_content']);
         add_action('wp_ajax_seo_forge_generate_image', [$this, 'ajax_generate_image']);
         add_action('wp_ajax_seo_forge_generate_blog_with_image', [$this, 'ajax_generate_blog_with_image']);
@@ -129,6 +130,7 @@ class SEOForgeComplete {
         // Load scripts on SEO Forge admin pages
         if (strpos($hook, 'seo-forge') !== false || $hook === 'toplevel_page_seo-forge') {
             wp_enqueue_script('seo-forge-admin', SEO_FORGE_URL . 'assets/js/seo-forge-admin.js', ['jquery', 'wp-api'], SEO_FORGE_VERSION, true);
+            wp_enqueue_script('seo-forge-progress', SEO_FORGE_URL . 'assets/js/seo-forge-progress.js', ['jquery', 'seo-forge-admin'], SEO_FORGE_VERSION, true);
             wp_enqueue_style('seo-forge-admin', SEO_FORGE_URL . 'assets/css/seo-forge-admin.css', [], SEO_FORGE_VERSION);
             
             wp_localize_script('seo-forge-admin', 'seoForgeAjax', [
@@ -1072,16 +1074,32 @@ class SEOForgeComplete {
         $keywords = sanitize_text_field($_POST['keywords'] ?? '');
         $length = intval($_POST['length'] ?? 500);
         $type = sanitize_text_field($_POST['type'] ?? 'blog');
+        $language = sanitize_text_field($_POST['language'] ?? 'auto');
         
-        $content = $this->generate_ai_content($topic, $keywords, $length, $type);
-        $seo_score = $this->calculate_seo_score($content, $keywords);
+        // Initialize progress
+        $this->update_progress(0, "Starting content generation...");
         
-        wp_send_json_success([
-            'content' => $content,
-            'word_count' => str_word_count($content),
-            'seo_score' => $seo_score,
-            'suggestions' => $this->get_seo_suggestions($content, $keywords)
-        ]);
+        $content = $this->generate_ai_content($topic, $keywords, $length, $type, $language);
+        
+        if ($content) {
+            $this->update_progress(95, "Calculating SEO score...");
+            $seo_score = $this->calculate_seo_score($content, $keywords);
+            $this->update_progress(100, "Content generation completed!");
+            
+            wp_send_json_success([
+                'content' => $content,
+                'word_count' => str_word_count($content),
+                'seo_score' => $seo_score,
+                'suggestions' => $this->get_seo_suggestions($content, $keywords),
+                'language' => $language
+            ]);
+        } else {
+            $this->update_progress(100, "Content generation failed");
+            wp_send_json_error([
+                'message' => 'Failed to generate content. Please try again.',
+                'language' => $language
+            ]);
+        }
     }
     
     public function ajax_analyze_content() {
@@ -1335,25 +1353,36 @@ class SEOForgeComplete {
         ]);
     }
     
+    public function ajax_get_progress() {
+        check_ajax_referer('seo_forge_nonce', 'nonce');
+        
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Insufficient permissions', 'seo-forge'));
+        }
+        
+        $progress = $this->get_progress();
+        wp_send_json_success($progress);
+    }
+    
     // Core Functions
-    private function generate_ai_content($topic, $keywords, $length, $type = 'blog') {
+    private function generate_ai_content($topic, $keywords, $length, $type = 'blog', $language = 'auto') {
         // Try SEO-Forge API first
-        $seo_forge_content = $this->generate_seo_forge_content($topic, $keywords, $length, $type);
+        $seo_forge_content = $this->generate_seo_forge_content($topic, $keywords, $length, $type, $language);
         if ($seo_forge_content) {
             return $seo_forge_content;
         }
         
         // Fallback to OpenAI if SEO-Forge API fails
-        $openai_content = $this->generate_openai_content($topic, $keywords, $length, $type);
+        $openai_content = $this->generate_openai_content($topic, $keywords, $length, $type, $language);
         if ($openai_content) {
             return $openai_content;
         }
         
         // Final fallback to templates
-        return $this->generate_fallback_content($topic, $keywords, $length, $type);
+        return $this->generate_fallback_content($topic, $keywords, $length, $type, $language);
     }
     
-    private function generate_seo_forge_content($topic, $keywords, $length, $type = 'blog') {
+    private function generate_seo_forge_content($topic, $keywords, $length, $type = 'blog', $language = 'auto') {
         // Updated API endpoints based on SEOForge MCP Server backend-express
         $api_base = 'https://seo-forge.bitebase.app';
         
@@ -1369,6 +1398,25 @@ class SEOForgeComplete {
         ];
         $api_length = $length_map[$length] ?? 'medium';
         
+        // Enhanced language detection and support
+        if ($language === 'auto') {
+            $wp_locale = get_locale();
+            $language = substr($wp_locale, 0, 2);
+            
+            // Detect Thai content
+            if (preg_match('/[\x{0E00}-\x{0E7F}]/u', $topic)) {
+                $language = 'th';
+            }
+        }
+        
+        // Support both Thai and English explicitly
+        $supported_languages = ['en', 'th'];
+        if (!in_array($language, $supported_languages)) {
+            $language = 'en'; // Default to English
+        }
+        
+        $this->update_progress(10, "Initializing content generation for language: {$language}");
+        
         // Try the correct API endpoints from backend-express
         $endpoints = [
             '/api/blog-generator/generate',           // Legacy API endpoint
@@ -1377,7 +1425,15 @@ class SEOForgeComplete {
             '/mcp/tools/execute'                      // Direct MCP tool execution
         ];
         
+        $total_endpoints = count($endpoints);
+        $current_endpoint = 0;
+        
         foreach ($endpoints as $endpoint) {
+            $current_endpoint++;
+            $progress = 20 + ($current_endpoint / $total_endpoints) * 60; // 20-80% for API attempts
+            
+            $this->update_progress($progress, "Trying endpoint {$current_endpoint}/{$total_endpoints}: {$endpoint}");
+            
             $api_endpoint = $api_base . $endpoint;
             
             // Prepare request body based on endpoint
@@ -1388,9 +1444,11 @@ class SEOForgeComplete {
                         'type' => $type,
                         'topic' => $topic,
                         'keywords' => $keywords_array,
-                        'language' => substr(get_locale(), 0, 2),
+                        'language' => $language,
                         'tone' => 'professional',
-                        'length' => $api_length
+                        'length' => $api_length,
+                        'include_seo' => true,
+                        'include_meta' => true
                     ]
                 ];
             } else {
@@ -1399,45 +1457,59 @@ class SEOForgeComplete {
                     'keywords' => $keywords_array,
                     'length' => $api_length,
                     'tone' => 'professional',
-                    'language' => substr(get_locale(), 0, 2),
+                    'language' => $language,
                     'content_type' => $type,
-                    'include_images' => false // Start with text only
+                    'include_images' => false, // Start with text only
+                    'include_seo' => true,
+                    'include_meta' => true,
+                    'format' => 'html'
                 ];
             }
+            
+            $this->update_progress($progress + 5, "Sending request to {$endpoint}...");
             
             $response = wp_remote_post($api_endpoint, [
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'User-Agent' => 'SEO-Forge-WordPress-Plugin/2.0.1',
                     'Accept' => 'application/json',
+                    'Accept-Language' => $language === 'th' ? 'th-TH,th;q=0.9,en;q=0.8' : 'en-US,en;q=0.9',
                     'X-Plugin-Version' => '2.0.1',
                     'X-WordPress-Site' => home_url(),
-                    'X-Client-ID' => 'wordpress-plugin'
+                    'X-Client-ID' => 'wordpress-plugin',
+                    'X-Language' => $language,
+                    'X-Content-Type' => $type
                 ],
                 'body' => wp_json_encode($request_body),
-                'timeout' => 60,
+                'timeout' => 180, // Increased timeout for better reliability
                 'sslverify' => true,
+                'blocking' => true,
+                'redirection' => 5
             ]);
             
             // If this endpoint works, break and process the response
             if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                $this->update_progress(85, "Received successful response from {$endpoint}");
                 break;
             }
             
             // Log failed attempts for debugging
             if (is_wp_error($response)) {
                 error_log("SEO-Forge API Error for endpoint {$endpoint}: " . $response->get_error_message());
+                $this->update_progress($progress + 10, "Error with {$endpoint}, trying next...");
             } else {
                 $response_code = wp_remote_retrieve_response_code($response);
                 $response_body = wp_remote_retrieve_body($response);
                 error_log("SEO-Forge API HTTP Error for endpoint {$endpoint}: Code {$response_code}, Body: {$response_body}");
+                $this->update_progress($progress + 10, "HTTP {$response_code} error, trying next endpoint...");
             }
         }
         
         if (is_wp_error($response)) {
             // Log the error for debugging
             error_log('SEO-Forge API Error: ' . $response->get_error_message());
-            return false;
+            $this->update_progress(90, "API failed, trying fallback content generation...");
+            return $this->generate_fallback_content($topic, $keywords, $length, $type, $language);
         }
         
         $response_code = wp_remote_retrieve_response_code($response);
@@ -1448,25 +1520,44 @@ class SEOForgeComplete {
         error_log('SEO-Forge API Response Body: ' . $body);
         
         if ($response_code !== 200) {
-            return false;
+            $this->update_progress(90, "HTTP error {$response_code}, trying fallback...");
+            return $this->generate_fallback_content($topic, $keywords, $length, $type, $language);
         }
+        
+        $this->update_progress(90, "Processing API response...");
         
         $data = json_decode($body, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
             error_log('SEO-Forge API JSON Error: ' . json_last_error_msg());
-            return false;
+            $this->update_progress(95, "Invalid JSON response, using fallback...");
+            return $this->generate_fallback_content($topic, $keywords, $length, $type, $language);
         }
         
+        // Handle different response formats from different endpoints
+        $content = null;
         if (isset($data['content']) && !empty($data['content'])) {
-            return $data['content'];
+            $content = $data['content'];
+        } elseif (isset($data['result']['content']) && !empty($data['result']['content'])) {
+            $content = $data['result']['content'];
+        } elseif (isset($data['data']['content']) && !empty($data['data']['content'])) {
+            $content = $data['data']['content'];
+        } elseif (isset($data['text']) && !empty($data['text'])) {
+            $content = $data['text'];
+        } elseif (isset($data['generated_content']) && !empty($data['generated_content'])) {
+            $content = $data['generated_content'];
+        } elseif (isset($data['response']) && !empty($data['response'])) {
+            $content = $data['response'];
         }
         
-        if (isset($data['data']['content']) && !empty($data['data']['content'])) {
-            return $data['data']['content'];
+        if ($content) {
+            $this->update_progress(100, "Content generated successfully!");
+            return $content;
         }
         
-        return false;
+        error_log('SEO-Forge API Unexpected response format: ' . json_encode($data));
+        $this->update_progress(95, "Unexpected response format, using fallback...");
+        return $this->generate_fallback_content($topic, $keywords, $length, $type, $language);
     }
     
     /**
@@ -1766,8 +1857,54 @@ class SEOForgeComplete {
         return false;
     }
     
-    private function generate_fallback_content($topic, $keywords, $length, $type) {
-        $templates = [
+    /**
+     * Update progress for long-running operations
+     */
+    private function update_progress($percentage, $message = '') {
+        // Store progress in transient for AJAX retrieval
+        $progress_data = [
+            'percentage' => min(100, max(0, $percentage)),
+            'message' => $message,
+            'timestamp' => time()
+        ];
+        
+        set_transient('seo_forge_progress_' . get_current_user_id(), $progress_data, 300); // 5 minutes
+        
+        // Also log for debugging
+        error_log("SEO-Forge Progress: {$percentage}% - {$message}");
+    }
+    
+    /**
+     * Get current progress for AJAX requests
+     */
+    public function get_progress() {
+        $progress = get_transient('seo_forge_progress_' . get_current_user_id());
+        
+        if (!$progress) {
+            $progress = [
+                'percentage' => 0,
+                'message' => 'Ready',
+                'timestamp' => time()
+            ];
+        }
+        
+        return $progress;
+    }
+    
+    private function generate_fallback_content($topic, $keywords, $length, $type, $language = 'en') {
+        // Thai language templates
+        $templates_th = [
+            'blog' => "# {topic}\n\nในคู่มือที่ครอบคลุมนี้ เราจะสำรวจ {topic} และความสัมพันธ์กับ {keywords}\n\n## บทนำ\n\n{topic} เป็นหัวข้อสำคัญที่หลายคนสนใจเรียนรู้ ตลอดบทความนี้ เราจะครอบคลุมประเด็นสำคัญของ {keywords} และให้ข้อมูลเชิงลึกที่มีค่า\n\n## เนื้อหาหลัก\n\nเมื่อพูดถึง {topic} สิ่งสำคัญคือต้องเข้าใจพื้นฐาน แนวคิดของ {keywords} มีบทบาทสำคัญในบริบทนี้\n\n## ประเด็นสำคัญ\n\n- การเข้าใจ {topic} มีความสำคัญต่อความสำเร็จ\n- {keywords} เป็นองค์ประกอบพื้นฐานที่ต้องพิจารณา\n- การประยุกต์ใช้ในทางปฏิบัติสร้างความแตกต่างอย่างมาก\n- ควรปฏิบัติตามแนวทางที่ดีที่สุดเสมอ\n\n## บทสรุป\n\nโดยสรุป {topic} มีโอกาสมากมายสำหรับการเติบโตและการปรับปรุง โดยการมุ่งเน้นที่ {keywords} คุณสามารถบรรลุผลลัพธ์ที่ดีกว่าและบรรลุเป้าหมายได้อย่างมีประสิทธิภาพมากขึ้น",
+            
+            'article' => "# การทำความเข้าใจ {topic}: การวิเคราะห์ที่ครอบคลุม\n\n{topic} มีความสำคัญเพิ่มขึ้นในโลกปัจจุบัน บทความนี้จะตรวจสอบความสัมพันธ์ระหว่าง {topic} และ {keywords}\n\n## ภูมิหลัง\n\nความสำคัญของ {topic} ไม่สามารถประเมินค่าได้มากเกินไป การวิจัยแสดงให้เห็นว่า {keywords} เป็นองค์ประกอบสำคัญที่มีส่วนช่วยให้ประสบความสำเร็จโดยรวม\n\n## การวิเคราะห์\n\nการวิเคราะห์ของเราเผยให้เห็นว่า {topic} ครอบคลุมหลายพื้นที่สำคัญ:\n\n1. **การพิจารณาหลัก** ที่เกี่ยวข้องกับ {keywords}\n2. **ปัจจัยรอง** ที่มีอิทธิพลต่อผลลัพธ์\n3. **แนวทางปฏิบัติที่ดีที่สุด** สำหรับการดำเนินการ\n4. **แนวโน้มในอนาคต** และการพัฒนา\n\n## ผลการค้นพบ\n\nข้อมูลแสดงให้เห็นว่าการมุ่งเน้นที่ {keywords} ในขณะที่จัดการกับ {topic} นำไปสู่ผลลัพธ์ที่ดีขึ้น องค์กรที่ให้ความสำคัญกับองค์ประกอบเหล่านี้มักจะมีประสิทธิภาพดีกว่า\n\n## ข้อเสนอแนะ\n\nจากการวิจัยของเรา เราแนะนำ:\n\n- การดำเนินกลยุทธ์ที่มุ่งเน้นที่ {keywords}\n- การติดตามตัวชี้วัด {topic} อย่างสม่ำเสมอ\n- กระบวนการปรับปรุงอย่างต่อเนื่อง\n- การมีส่วนร่วมและข้อเสนอแนะจากผู้มีส่วนได้ส่วนเสีย\n\n## บทสรุป\n\nความสัมพันธ์ระหว่าง {topic} และ {keywords} มีความซับซ้อนแต่สามารถจัดการได้ด้วยแนวทางที่ถูกต้อง",
+            
+            'guide' => "# วิธีการเชี่ยวชาญ {topic}: คู่มือทีละขั้นตอน\n\nการเรียนรู้เกี่ยวกับ {topic} ไม่จำเป็นต้องซับซ้อน คู่มือนี้จะแนะนำคุณผ่านทุกสิ่งที่คุณต้องรู้เกี่ยวกับ {keywords}\n\n## การเริ่มต้น\n\nก่อนที่จะเจาะลึกเข้าไปใน {topic} สิ่งสำคัญคือต้องเข้าใจพื้นฐานของ {keywords} รากฐานนี้จะช่วยให้คุณประสบความสำเร็จ\n\n## ขั้นตอนที่ 1: การทำความเข้าใจพื้นฐาน\n\nเริ่มต้นด้วยการทำความคุ้นเคยกับ {topic} แนวคิดสำคัญรวมถึง {keywords} และการประยุกต์ใช้ในทางปฏิบัติ\n\n## ขั้นตอนที่ 2: การวางแผนแนวทางของคุณ\n\nพัฒนากลยุทธ์ที่รวม {keywords} เข้าไปในการดำเนินการ {topic} ของคุณ พิจารณาปัจจัยเหล่านี้:\n\n- ทรัพยากรที่มีอยู่\n- ไทม์ไลน์และเป้าหมายสำคัญ\n- ตัวชี้วัดความสำเร็จ\n- ความท้าทายที่อาจเกิดขึ้น\n\n## ขั้นตอนที่ 3: การดำเนินการ\n\nเริ่มดำเนินกลยุทธ์ {topic} ของคุณโดยมุ่งเน้นที่ {keywords} ทำทีละขั้นตอน\n\n## ขั้นตอนที่ 4: การติดตามและการปรับปรุง\n\nประเมินความก้าวหน้าของคุณกับ {topic} อย่างสม่ำเสมอและปรับแนวทางของคุณต่อ {keywords} ตามความจำเป็น\n\n## ข้อผิดพลาดทั่วไปที่ควรหลีกเลี่ยง\n\n- การรีบร้อนในกระบวนการ\n- การเพิกเฉยต่อ {keywords}\n- การขาดการวางแผนที่เหมาะสม\n- การติดตามไม่เพียงพอ\n\n## บทสรุป\n\nการเชี่ยวชาญ {topic} ใช้เวลาและการฝึกฝน แต่ด้วยความใส่ใจที่เหมาะสมต่อ {keywords} คุณจะบรรลุเป้าหมายของคุณ",
+            
+            'review' => "# รีวิว {topic}: ทุกสิ่งที่คุณต้องรู้\n\nในรีวิวที่ครอบคลุมนี้ เราจะตรวจสอบ {topic} และประเมินประสิทธิภาพในความสัมพันธ์กับ {keywords}\n\n## ภาพรวม\n\n{topic} ได้รับความสนใจอย่างมากเมื่อเร็วๆ นี้ รีวิวของเรามุ่งเน้นที่ว่ามันจัดการกับ {keywords} ได้ดีเพียงใดและตอบสนองความคาดหวังของผู้ใช้\n\n## คุณสมบัติหลัก\n\nคุณสมบัติหลักของ {topic} ประกอบด้วย:\n\n- การครอบคลุม {keywords} อย่างครอบคลุม\n- อินเทอร์เฟซที่ใช้งานง่าย\n- ประสิทธิภาพที่เชื่อถือได้\n- ข้อเสนอคุณค่าที่ดี\n\n## ข้อดีและข้อเสีย\n\n### ข้อดี\n- การจัดการ {keywords} ที่ยอดเยี่ยม\n- ประสิทธิภาพที่แข็งแกร่งในสถานการณ์ {topic}\n- การสนับสนุนลูกค้าที่ดี\n- การอัปเดตและการปรับปรุงอย่างสม่ำเสมอ\n\n### ข้อเสีย\n- เส้นโค้งการเรียนรู้สำหรับผู้เริ่มต้น\n- คุณสมบัติขั้นสูงบางอย่างต้องการการตั้งค่าเพิ่มเติม\n- จุดราคาอาจสูงสำหรับผู้ใช้บางคน\n\n## การวิเคราะห์ประสิทธิภาพ\n\nการทดสอบของเราแสดงให้เห็นว่า {topic} มีประสิทธิภาพดีในสถานการณ์ {keywords} ต่างๆ ผลลัพธ์เป็นบวกอย่างสม่ำเสมอ\n\n## ประสบการณ์ผู้ใช้\n\nผู้ใช้รายงานความพึงพอใจกับ {topic} โดยเฉพาะการชื่นชมแนวทางของมันต่อ {keywords} อินเทอร์เฟซใช้งานง่ายและตอบสนองดี\n\n## คำตัดสินขั้นสุดท้าย\n\n{topic} เป็นตัวเลือกที่มั่นคงสำหรับผู้ที่ต้องการทำงานกับ {keywords} แม้ว่าจะมีข้อจำกัดบางอย่าง แต่ประสบการณ์โดยรวมเป็นบวก\n\n## คะแนน: 4.5/5 ดาว\n\nเราแนะนำ {topic} สำหรับผู้ใช้ที่ให้ความสำคัญกับ {keywords} และให้ความสำคัญกับประสิทธิภาพที่เชื่อถือได้"
+        ];
+        
+        // English language templates
+        $templates_en = [
             'blog' => "# {topic}\n\nIn this comprehensive guide, we'll explore {topic} and how it relates to {keywords}.\n\n## Introduction\n\n{topic} is an important subject that many people are interested in learning about. Throughout this article, we'll cover the key aspects of {keywords} and provide valuable insights.\n\n## Main Content\n\nWhen discussing {topic}, it's essential to understand the fundamentals. The concept of {keywords} plays a crucial role in this context.\n\n## Key Points\n\n- Understanding {topic} is crucial for success\n- {keywords} are fundamental elements to consider\n- Practical applications make a significant difference\n- Best practices should always be followed\n\n## Conclusion\n\nIn conclusion, {topic} offers numerous opportunities for growth and improvement. By focusing on {keywords}, you can achieve better results and reach your goals more effectively.",
             
             'article' => "# Understanding {topic}: A Comprehensive Analysis\n\n{topic} has become increasingly important in today's world. This article examines the relationship between {topic} and {keywords}.\n\n## Background\n\nThe significance of {topic} cannot be overstated. Research shows that {keywords} are essential components that contribute to overall success.\n\n## Analysis\n\nOur analysis reveals that {topic} encompasses several key areas:\n\n1. **Primary considerations** related to {keywords}\n2. **Secondary factors** that influence outcomes\n3. **Best practices** for implementation\n4. **Future trends** and developments\n\n## Findings\n\nThe data suggests that focusing on {keywords} while addressing {topic} leads to improved results. Organizations that prioritize these elements tend to perform better.\n\n## Recommendations\n\nBased on our research, we recommend:\n\n- Implementing strategies focused on {keywords}\n- Regular monitoring of {topic} metrics\n- Continuous improvement processes\n- Stakeholder engagement and feedback\n\n## Conclusion\n\nThe relationship between {topic} and {keywords} is complex but manageable with the right approach.",
@@ -1777,6 +1914,8 @@ class SEOForgeComplete {
             'review' => "# {topic} Review: Everything You Need to Know\n\nIn this comprehensive review, we'll examine {topic} and evaluate its performance in relation to {keywords}.\n\n## Overview\n\n{topic} has gained significant attention recently. Our review focuses on how well it addresses {keywords} and meets user expectations.\n\n## Key Features\n\nThe main features of {topic} include:\n\n- Comprehensive coverage of {keywords}\n- User-friendly interface\n- Reliable performance\n- Good value proposition\n\n## Pros and Cons\n\n### Pros\n- Excellent handling of {keywords}\n- Strong performance in {topic} scenarios\n- Good customer support\n- Regular updates and improvements\n\n### Cons\n- Learning curve for beginners\n- Some advanced features require additional setup\n- Price point may be high for some users\n\n## Performance Analysis\n\nOur testing shows that {topic} performs well across various {keywords} scenarios. The results are consistently positive.\n\n## User Experience\n\nUsers report satisfaction with {topic}, particularly praising its approach to {keywords}. The interface is intuitive and responsive.\n\n## Final Verdict\n\n{topic} is a solid choice for those looking to work with {keywords}. While there are some limitations, the overall experience is positive.\n\n## Rating: 4.5/5 Stars\n\nWe recommend {topic} for users who prioritize {keywords} and value reliable performance."
         ];
         
+        // Choose templates based on language
+        $templates = ($language === 'th') ? $templates_th : $templates_en;
         $template = $templates[$type] ?? $templates['blog'];
         
         $content = str_replace(['{topic}', '{keywords}'], [$topic, $keywords], $template);
@@ -1786,8 +1925,12 @@ class SEOForgeComplete {
         if (count($words) > $length) {
             $content = implode(' ', array_slice($words, 0, $length));
         } elseif (count($words) < $length) {
-            // Add more content to reach target length
-            $additional = "\n\n## Additional Information\n\nFurther details about {topic} and {keywords} can help provide more comprehensive understanding. This includes practical examples, case studies, and real-world applications that demonstrate the effectiveness of these concepts.";
+            // Add more content to reach target length based on language
+            if ($language === 'th') {
+                $additional = "\n\n## ข้อมูลเพิ่มเติม\n\nรายละเอียดเพิ่มเติมเกี่ยวกับ {topic} และ {keywords} สามารถช่วยให้เข้าใจได้อย่างครอบคลุมมากขึ้น ซึ่งรวมถึงตัวอย่างการปฏิบัติ กรณีศึกษา และการประยุกต์ใช้ในโลกแห่งความเป็นจริงที่แสดงให้เห็นถึงประสิทธิภาพของแนวคิดเหล่านี้";
+            } else {
+                $additional = "\n\n## Additional Information\n\nFurther details about {topic} and {keywords} can help provide more comprehensive understanding. This includes practical examples, case studies, and real-world applications that demonstrate the effectiveness of these concepts.";
+            }
             $content .= str_replace(['{topic}', '{keywords}'], [$topic, $keywords], $additional);
         }
         
