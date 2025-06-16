@@ -1,11 +1,20 @@
 # SEO-Forge Professional WordPress Plugin
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/seo-forge/seo-forge)
+[![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)](https://github.com/khiwniti/seo-forge-professional)
 [![WordPress](https://img.shields.io/badge/wordpress-6.0%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/php-8.0%2B-purple.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-GPL%20v2%2B-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 
 A professional-grade WordPress plugin with advanced SEO capabilities, AI-powered content generation, comprehensive analytics, and enterprise-level security features. Built with modern architecture and following WordPress best practices.
+
+## 🔄 Recent Updates (v2.0.1)
+- ✅ **Fixed critical PHP syntax errors** - Resolved missing closing braces and syntax issues
+- ✅ **Updated API integration** - Connected to real SEOForge MCP server endpoints
+- ✅ **Enhanced error handling** - Improved fallback systems when API is unavailable
+- ✅ **Thai language support** - Enhanced Thai content generation capabilities
+- ✅ **Version consistency** - Fixed version mismatches across all plugin files
+- ✅ **Comprehensive logging** - Added detailed debugging and error tracking
+- ✅ **Production ready** - Plugin tested and ready for deployment
 
 ## 🚀 Features
 
@@ -69,17 +78,23 @@ A professional-grade WordPress plugin with advanced SEO capabilities, AI-powered
 
 ## 🔧 Installation
 
-### Automatic Installation
-1. Log in to your WordPress admin panel
-2. Navigate to **Plugins > Add New**
-3. Search for "SEO-Forge Professional"
-4. Click **Install Now** and then **Activate**
+### 📦 Release Package
+- **Current Version**: 2.0.1
+- **Package File**: `seo-forge-professional-v2.0.1.zip` (included in this repository)
+- **Size**: ~100KB
+- **Last Updated**: June 16, 2025
 
-### Manual Installation
-1. Download the plugin ZIP file
-2. Upload to `/wp-content/plugins/seo-forge/`
-3. Extract the files
-4. Activate through the WordPress admin panel
+### Manual Installation (Recommended)
+1. Download `seo-forge-professional-v2.0.1.zip` from this repository
+2. Log in to your WordPress admin panel
+3. Navigate to **Plugins > Add New > Upload Plugin**
+4. Choose the ZIP file and click **Install Now**
+5. Click **Activate** to enable the plugin
+
+### Alternative Installation
+1. Download and extract the ZIP file
+2. Upload the `seo-forge-professional` folder to `/wp-content/plugins/`
+3. Activate through the WordPress admin panel
 
 ### Development Setup
 ```bash
