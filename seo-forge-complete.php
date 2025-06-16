@@ -26,7 +26,7 @@ if (!defined('ABSPATH')) {
 
 // Plugin constants (only if not already defined)
 if (!defined('SEO_FORGE_VERSION')) {
-    define('SEO_FORGE_VERSION', '2.0.0');
+    define('SEO_FORGE_VERSION', '2.0.1');
 }
 if (!defined('SEO_FORGE_FILE')) {
     define('SEO_FORGE_FILE', __FILE__);
@@ -1306,9 +1306,10 @@ class SEOForgeComplete {
         
         $api_base = 'https://seo-forge.bitebase.app';
         $health_endpoints = [
-            '/health',
-            '/mcp/status',
-            '/universal-mcp/status'
+            '/health',                    // Primary health endpoint
+            '/health/ready',             // Readiness check
+            '/health/live',              // Liveness check
+            '/api/v1/health'             // V1 API health endpoint
         ];
         
         $results = [];
@@ -1418,11 +1419,11 @@ class SEOForgeComplete {
         $this->update_progress(10, "Initializing content generation for language: {$language}");
         
         // Try the correct API endpoints from backend-express
+        // Prioritize legacy endpoints that don't require authentication
         $endpoints = [
-            '/api/blog-generator/generate',           // Legacy API endpoint
-            '/universal-mcp/generate-content',        // Universal MCP endpoint
-            '/universal-mcp/generate-blog-with-images', // Blog with images
-            '/mcp/tools/execute'                      // Direct MCP tool execution
+            '/api/blog-generator/generate',          // Legacy API endpoint (no auth required)
+            '/api/universal-mcp/execute',            // Universal MCP endpoint (fallback)
+            '/api/v1/content/generate'               // V1 API endpoint (requires auth - last resort)
         ];
         
         $total_endpoints = count($endpoints);
@@ -1437,7 +1438,16 @@ class SEOForgeComplete {
             $api_endpoint = $api_base . $endpoint;
             
             // Prepare request body based on endpoint
-            if ($endpoint === '/mcp/tools/execute') {
+            if ($endpoint === '/api/blog-generator/generate') {
+                // Legacy API format (no auth required)
+                $request_body = [
+                    'topic' => $topic,
+                    'keywords' => $keywords_array,
+                    'length' => $api_length,
+                    'tone' => 'professional',
+                    'language' => $language
+                ];
+            } elseif ($endpoint === '/api/universal-mcp/execute') {
                 $request_body = [
                     'tool' => 'generate_content',
                     'arguments' => [
@@ -1446,23 +1456,18 @@ class SEOForgeComplete {
                         'keywords' => $keywords_array,
                         'language' => $language,
                         'tone' => 'professional',
-                        'length' => $api_length,
-                        'include_seo' => true,
-                        'include_meta' => true
+                        'length' => $api_length
                     ]
                 ];
             } else {
+                // V1 API format - uses 'keyword' (singular) and specific structure
+                $primary_keyword = !empty($keywords_array) ? $keywords_array[0] : $topic;
                 $request_body = [
-                    'topic' => $topic,
-                    'keywords' => $keywords_array,
-                    'length' => $api_length,
-                    'tone' => 'professional',
+                    'keyword' => $primary_keyword,
                     'language' => $language,
-                    'content_type' => $type,
-                    'include_images' => false, // Start with text only
-                    'include_seo' => true,
-                    'include_meta' => true,
-                    'format' => 'html'
+                    'type' => $type,
+                    'length' => $api_length,
+                    'style' => 'professional'
                 ];
             }
             
@@ -1536,7 +1541,13 @@ class SEOForgeComplete {
         
         // Handle different response formats from different endpoints
         $content = null;
-        if (isset($data['content']) && !empty($data['content'])) {
+        
+        // V1 API response format: { "success": true, "data": { "content": "...", "title": "...", ... } }
+        if (isset($data['success']) && $data['success'] && isset($data['data']['content'])) {
+            $content = $data['data']['content'];
+        }
+        // Legacy API formats
+        elseif (isset($data['content']) && !empty($data['content'])) {
             $content = $data['content'];
         } elseif (isset($data['result']['content']) && !empty($data['result']['content'])) {
             $content = $data['result']['content'];
@@ -1548,6 +1559,13 @@ class SEOForgeComplete {
             $content = $data['generated_content'];
         } elseif (isset($data['response']) && !empty($data['response'])) {
             $content = $data['response'];
+        }
+        
+        // Check for V1 API error format
+        if (isset($data['success']) && !$data['success'] && isset($data['error'])) {
+            error_log('SEO-Forge V1 API Error: ' . json_encode($data['error']));
+            $this->update_progress(95, "API error: " . $data['error']['message'] . ", using fallback...");
+            return $this->generate_fallback_content($topic, $keywords, $length, $type, $language);
         }
         
         if ($content) {
@@ -1639,17 +1657,24 @@ class SEOForgeComplete {
         $api_base = 'https://seo-forge.bitebase.app';
         
         $endpoints = [
-            '/api/flux-image-gen/generate',       // Legacy API endpoint
-            '/universal-mcp/generate-image',      // Universal MCP endpoint
-            '/universal-mcp/generate-flux-image', // Flux image generation
-            '/mcp/tools/execute'                  // Direct MCP tool execution
+            '/api/flux-image-gen/generate',       // Legacy API endpoint (no auth required)
+            '/api/universal-mcp/execute',         // Universal MCP endpoint (fallback)
+            '/api/v1/images/generate'             // V1 API endpoint (requires auth - last resort)
         ];
         
         foreach ($endpoints as $endpoint) {
             $api_endpoint = $api_base . $endpoint;
             
             // Prepare request body based on endpoint
-            if ($endpoint === '/mcp/tools/execute') {
+            if ($endpoint === '/api/flux-image-gen/generate') {
+                // Legacy API format (no auth required)
+                $request_body = [
+                    'prompt' => $prompt,
+                    'style' => $style,
+                    'size' => $size,
+                    'count' => 1
+                ];
+            } elseif ($endpoint === '/api/universal-mcp/execute') {
                 $request_body = [
                     'tool' => 'generate_image',
                     'arguments' => [
@@ -1660,11 +1685,12 @@ class SEOForgeComplete {
                     ]
                 ];
             } else {
+                // V1 API format
                 $request_body = [
                     'prompt' => $prompt,
                     'style' => $style,
                     'size' => $size,
-                    'count' => 1
+                    'quality' => 'high'
                 ];
             }
             
@@ -1688,7 +1714,12 @@ class SEOForgeComplete {
                 
                 if (json_last_error() === JSON_ERROR_NONE) {
                     // Handle different response formats
-                    if (isset($data['image_url'])) {
+                    // V1 API response format: { "success": true, "data": { "image_url": "...", ... } }
+                    if (isset($data['success']) && $data['success'] && isset($data['data']['image_url'])) {
+                        return $data['data']['image_url'];
+                    }
+                    // Legacy formats
+                    elseif (isset($data['image_url'])) {
                         return $data['image_url'];
                     } elseif (isset($data['result']['image_url'])) {
                         return $data['result']['image_url'];
