@@ -1,20 +1,10 @@
 <?php
 /**
- * Plugin Name: SEO-Forge Professional
- * Plugin URI: https://seo-forge.bitebase.app
- * Description: Professional WordPress plugin with advanced SEO capabilities, AI-powered blog generation, content management, and comprehensive analytics. Built with modern architecture and security best practices.
- * Version: 2.0.0
- * Requires at least: 6.0
- * Requires PHP: 8.0
- * Author: SEO-Forge Team
- * Author URI: https://seo-forge.bitebase.app
- * License: GPL v2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: seo-forge
- * Domain Path: /languages
- * Network: false
- * Update URI: https://seo-forge.bitebase.app/updates
- *
+ * SEO-Forge Professional Plugin Loader
+ * 
+ * This file loads the complete SEO-Forge Professional plugin.
+ * The main plugin functionality is in seo-forge-complete.php
+ * 
  * @package SEOForge
  * @since 2.0.0
  */
