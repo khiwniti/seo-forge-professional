@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Plugin Name: SEO-Forge Professional
  * Plugin URI: https://seo-forge.bitebase.app
  * Description: Professional WordPress SEO plugin with AI-powered content generation, analytics, and comprehensive SEO tools. All-in-one solution using WordPress native UI.
- * Version: 2.0.1
+ * Version: 2.1.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: SEO-Forge Team

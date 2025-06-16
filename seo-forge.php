@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 
 // Plugin constants (only if not already defined)
 if (!defined('SEO_FORGE_VERSION')) {
-    define('SEO_FORGE_VERSION', '2.0.1');
+    define('SEO_FORGE_VERSION', '2.1.0');
 }
 if (!defined('SEO_FORGE_MIN_PHP')) {
     define('SEO_FORGE_MIN_PHP', '8.0');
