@@ -1,0 +1,869 @@
+/**
+ * SEO Forge Professional - Admin Styles
+ * Uses WordPress default UI components for memory efficiency
+ * Version: 2.0.0
+ */
+
+/* ==========================================================================
+   Main Layout & Header
+   ========================================================================== */
+
+/* Tab Navigation */
+.seo-forge-tab-content {
+    margin-top: 20px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-top: none;
+    padding: 20px;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.nav-tab-wrapper {
+    margin-bottom: 0;
+    border-bottom: 1px solid #c3c4c7;
+}
+
+.nav-tab {
+    position: relative;
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: transparent;
+    color: #646970;
+    font-size: 14px;
+    line-height: 1.71428571;
+    transition: all 0.3s ease;
+}
+
+.nav-tab:hover {
+    color: #0073aa;
+    background: #f6f7f7;
+}
+
+.nav-tab-active {
+    color: #1d2327;
+    background: #fff;
+    border-color: #c3c4c7;
+    border-bottom-color: #fff;
+    margin-bottom: -1px;
+    position: relative;
+    z-index: 1;
+}
+
+.nav-tab-active:hover {
+    color: #1d2327;
+    background: #fff;
+}
+
+/* ==========================================================================
+   Main Layout & Header
+   ========================================================================== */
+
+.seo-forge-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.seo-forge-version {
+    background: #0073aa;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   Dashboard Components
+   ========================================================================== */
+
+.seo-forge-dashboard {
+    max-width: 1200px;
+}
+
+.seo-forge-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.seo-forge-stat-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    transition: box-shadow 0.3s ease;
+}
+
+.seo-forge-stat-card:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.stat-icon {
+    margin-right: 15px;
+    font-size: 24px;
+    color: #0073aa;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: #1d2327;
+    line-height: 1;
+    margin-bottom: 5px;
+}
+
+.stat-title {
+    font-size: 14px;
+    color: #646970;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.seo-forge-recent-activity,
+.seo-forge-quick-actions {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.seo-forge-recent-activity h3,
+.seo-forge-quick-actions h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1d2327;
+    font-size: 18px;
+}
+
+.seo-forge-activity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.seo-forge-activity-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.seo-forge-activity-list li:last-child {
+    border-bottom: none;
+}
+
+.activity-time {
+    color: #646970;
+    font-size: 12px;
+}
+
+.seo-forge-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+/* ==========================================================================
+   Forms & Meta Boxes
+   ========================================================================== */
+
+.seo-forge-meta-box {
+    padding: 0;
+}
+
+.seo-forge-meta-box .form-table th {
+    width: 150px;
+    padding: 15px 10px 15px 0;
+    vertical-align: top;
+}
+
+.seo-forge-meta-box .form-table td {
+    padding: 15px 0;
+}
+
+.seo-forge-counter {
+    margin-top: 5px;
+    font-size: 12px;
+    color: #646970;
+}
+
+.seo-forge-counter.over-limit {
+    color: #d63638;
+}
+
+.seo-forge-analysis {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f6f7f7;
+    border-radius: 4px;
+}
+
+.seo-forge-analysis h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #1d2327;
+}
+
+#seo-analysis-results {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    min-height: 60px;
+}
+
+.seo-score {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.seo-score.score-0,
+.seo-score.score-1 {
+    background: #d63638;
+}
+
+.seo-score.score-2,
+.seo-score.score-3 {
+    background: #dba617;
+}
+
+.seo-score.score-4,
+.seo-score.score-5 {
+    background: #00a32a;
+}
+
+/* ==========================================================================
+   Content Generator
+   ========================================================================== */
+
+.seo-forge-generator,
+.seo-forge-analytics,
+.seo-forge-keywords {
+    max-width: 1000px;
+}
+
+.seo-forge-form {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.seo-forge-generated-content {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+#content-preview {
+    background: #f6f7f7;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: Georgia, serif;
+    line-height: 1.6;
+}
+
+#content-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #f0f6fc;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+.content-stat {
+    text-align: center;
+}
+
+.content-stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #0073aa;
+    display: block;
+}
+
+.content-stat-label {
+    font-size: 12px;
+    color: #646970;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   Analytics & Charts
+   ========================================================================== */
+
+.seo-forge-date-range {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+.seo-forge-date-range label {
+    margin-right: 10px;
+    font-weight: 600;
+}
+
+.seo-forge-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.chart-container {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.chart-container h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1d2327;
+    font-size: 16px;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+    height: 300px;
+}
+
+.seo-forge-top-content,
+.seo-forge-keyword-rankings {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.seo-forge-top-content h3,
+.seo-forge-keyword-rankings h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1d2327;
+    font-size: 18px;
+}
+
+/* ==========================================================================
+   Keywords Management
+   ========================================================================== */
+
+.seo-forge-add-keyword {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.seo-forge-add-keyword h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1d2327;
+    font-size: 18px;
+}
+
+.seo-forge-keywords-list {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.seo-forge-keywords-list h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1d2327;
+    font-size: 18px;
+}
+
+.position-change {
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.position-change.positive {
+    color: #00a32a;
+}
+
+.position-change.negative {
+    color: #d63638;
+}
+
+/* ==========================================================================
+   Settings
+   ========================================================================== */
+
+.seo-forge-settings-section {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.seo-forge-settings-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1d2327;
+    font-size: 18px;
+    border-bottom: 1px solid #f0f0f1;
+    padding-bottom: 10px;
+}
+
+/* ==========================================================================
+   Loading States & Animations
+   ========================================================================== */
+
+.seo-forge-loading {
+    position: relative;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.seo-forge-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #0073aa;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: seo-forge-spin 1s linear infinite;
+}
+
+@keyframes seo-forge-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.seo-forge-fade-in {
+    animation: seo-forge-fade-in 0.3s ease-in-out;
+}
+
+@keyframes seo-forge-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================================================
+   Notifications & Alerts
+   ========================================================================== */
+
+.seo-forge-notice {
+    padding: 12px;
+    margin: 15px 0;
+    border-left: 4px solid #0073aa;
+    background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.seo-forge-notice.notice-success {
+    border-left-color: #00a32a;
+}
+
+.seo-forge-notice.notice-warning {
+    border-left-color: #dba617;
+}
+
+.seo-forge-notice.notice-error {
+    border-left-color: #d63638;
+}
+
+.seo-forge-notice p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* ==========================================================================
+   Simple Charts (Fallback)
+   ========================================================================== */
+
+.simple-chart {
+    display: flex;
+    align-items: flex-end;
+    height: 200px;
+    padding: 20px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    gap: 5px;
+}
+
+.chart-bar {
+    flex: 1;
+    background: linear-gradient(to top, #0073aa, #005a87);
+    border-radius: 2px 2px 0 0;
+    min-height: 10px;
+    transition: all 0.3s ease;
+}
+
+.chart-bar:hover {
+    background: linear-gradient(to top, #005a87, #0073aa);
+    transform: scaleY(1.1);
+}
+
+/* ==========================================================================
+   SEO Analysis Styles
+   ========================================================================== */
+
+.seo-analysis-score {
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #f0f6fc;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.seo-metrics ul,
+.seo-issues-list,
+.seo-suggestions-list {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.seo-issue-error {
+    color: #d63638;
+    margin-bottom: 5px;
+}
+
+.seo-suggestion {
+    color: #dba617;
+    margin-bottom: 5px;
+}
+
+.real-time-analysis {
+    padding: 15px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.real-time-analysis .seo-score {
+    display: block;
+    text-align: center;
+    margin: 10px 0;
+    font-size: 18px;
+    padding: 10px;
+}
+
+/* ==========================================================================
+   Tooltips
+   ========================================================================== */
+
+.seo-forge-tooltip {
+    position: absolute;
+    background: #1d2327;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10000;
+    max-width: 200px;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.seo-forge-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border: 5px solid transparent;
+    border-top-color: #1d2327;
+}
+
+/* ==========================================================================
+   Content Stats
+   ========================================================================== */
+
+.seo-suggestions {
+    margin-top: 15px;
+    padding: 15px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+}
+
+.seo-suggestions h4 {
+    margin-top: 0;
+    color: #856404;
+}
+
+.seo-suggestions ul {
+    margin-bottom: 0;
+}
+
+.seo-suggestions li {
+    color: #856404;
+    margin-bottom: 5px;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media screen and (max-width: 782px) {
+    .seo-forge-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .seo-forge-charts {
+        grid-template-columns: 1fr;
+    }
+    
+    .seo-forge-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .seo-forge-stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .stat-icon {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .seo-forge-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .chart-container canvas {
+        height: 250px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .seo-forge-meta-box .form-table th {
+        width: auto;
+        display: block;
+        padding-bottom: 5px;
+    }
+    
+    .seo-forge-meta-box .form-table td {
+        display: block;
+        padding-top: 5px;
+    }
+    
+    #content-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================================================
+   WordPress Admin Compatibility
+   ========================================================================== */
+
+/* Ensure compatibility with WordPress admin color schemes */
+.admin-color-light .seo-forge-version {
+    background: #04a4cc;
+}
+
+.admin-color-blue .seo-forge-version {
+    background: #096484;
+}
+
+.admin-color-coffee .seo-forge-version {
+    background: #46403c;
+}
+
+.admin-color-ectoplasm .seo-forge-version {
+    background: #523f6d;
+}
+
+.admin-color-midnight .seo-forge-version {
+    background: #e14d43;
+}
+
+.admin-color-ocean .seo-forge-version {
+    background: #627c83;
+}
+
+.admin-color-sunrise .seo-forge-version {
+    background: #dd823b;
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+    .seo-forge-header,
+    .seo-forge-actions-grid,
+    .button,
+    .seo-forge-loading::after {
+        display: none !important;
+    }
+    
+    .seo-forge-stat-card,
+    .seo-forge-form,
+    .chart-container {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+    
+    .seo-forge-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ==========================================================================
+   Accessibility Improvements
+   ========================================================================== */
+
+.seo-forge-stat-card:focus-within {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.seo-score {
+    position: relative;
+}
+
+.seo-score::after {
+    content: attr(aria-label);
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%);
+    background: #1d2327;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.seo-score:hover::after,
+.seo-score:focus::after {
+    opacity: 1;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .seo-forge-stat-card,
+    .seo-forge-form,
+    .chart-container {
+        border-width: 2px;
+    }
+    
+    .stat-icon {
+        color: #000;
+    }
+    
+    .seo-forge-version {
+        background: #000;
+        color: #fff;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .seo-forge-loading::after,
+    .seo-forge-fade-in {
+        animation: none;
+    }
+    
+    .seo-forge-stat-card {
+        transition: none;
+    }
+}
+
+/* ==========================================================================
+   Dark Mode Support (for future WordPress versions)
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+    .wp-admin .seo-forge-stat-card,
+    .wp-admin .seo-forge-form,
+    .wp-admin .chart-container {
+        background: #1d2327;
+        border-color: #3c434a;
+        color: #f0f0f1;
+    }
+    
+    .wp-admin .stat-value {
+        color: #f0f0f1;
+    }
+    
+    .wp-admin .stat-title {
+        color: #a7aaad;
+    }
+    
+    .wp-admin #content-preview {
+        background: #2c3338;
+        border-color: #3c434a;
+        color: #f0f0f1;
+    }
+    
+    .wp-admin #content-stats {
+        background: #2c3338;
+        border-color: #3c434a;
+    }
+}
