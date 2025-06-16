@@ -73,6 +73,11 @@ class SEOForgeComplete {
         add_action('wp_ajax_seo_forge_get_analytics', [$this, 'ajax_get_analytics']);
         add_action('wp_ajax_seo_forge_save_settings', [$this, 'ajax_save_settings']);
         add_action('wp_ajax_seo_forge_test_api', [$this, 'ajax_test_api']);
+        add_action('wp_ajax_seo_forge_save_generated_content', [$this, 'ajax_save_generated_content']);
+        
+        // Admin interface customization
+        add_action('admin_notices', [$this, 'show_seo_content_notice']);
+        add_filter('views_edit-seo_content', [$this, 'customize_seo_content_views']);
         
         // Cron jobs
         add_action('seo_forge_daily_analytics', [$this, 'daily_analytics_sync']);
@@ -154,7 +159,7 @@ class SEOForgeComplete {
                 'new_item' => __('New SEO Content', 'seo-forge'),
                 'view_item' => __('View SEO Content', 'seo-forge'),
                 'search_items' => __('Search SEO Content', 'seo-forge'),
-                'not_found' => __('No SEO content found', 'seo-forge'),
+                'not_found' => __('No SEO content found. Use the Content Generator to create your first SEO-optimized content!', 'seo-forge'),
                 'not_found_in_trash' => __('No SEO content found in trash', 'seo-forge'),
             ],
             'public' => false,
@@ -1145,6 +1150,62 @@ class SEOForgeComplete {
         }
     }
     
+    public function ajax_save_generated_content() {
+        check_ajax_referer('seo_forge_nonce', 'nonce');
+        
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Insufficient permissions', 'seo-forge'));
+        }
+        
+        $title = sanitize_text_field($_POST['title'] ?? '');
+        $content = wp_kses_post($_POST['content'] ?? '');
+        $keywords = sanitize_text_field($_POST['keywords'] ?? '');
+        $type = sanitize_text_field($_POST['type'] ?? 'blog');
+        
+        if (empty($title) || empty($content)) {
+            wp_send_json_error(['message' => __('Title and content are required', 'seo-forge')]);
+        }
+        
+        // Create new SEO content post
+        $post_data = [
+            'post_title' => $title,
+            'post_content' => $content,
+            'post_status' => 'draft',
+            'post_type' => 'seo_content',
+            'post_author' => get_current_user_id(),
+            'meta_input' => [
+                '_seo_forge_focus_keyword' => $keywords,
+                '_seo_forge_content_type' => $type,
+                '_seo_forge_generated' => true,
+                '_seo_forge_generation_date' => current_time('mysql')
+            ]
+        ];
+        
+        $post_id = wp_insert_post($post_data);
+        
+        if (is_wp_error($post_id)) {
+            wp_send_json_error(['message' => __('Failed to save content', 'seo-forge')]);
+        }
+        
+        // Generate SEO meta data
+        $meta_title = $this->generate_meta_title($title, $keywords);
+        $meta_description = $this->generate_meta_description($content, $keywords);
+        
+        update_post_meta($post_id, '_seo_forge_meta_title', $meta_title);
+        update_post_meta($post_id, '_seo_forge_meta_description', $meta_description);
+        
+        // Calculate SEO score
+        $seo_score = $this->calculate_seo_score($content, $keywords);
+        update_post_meta($post_id, '_seo_forge_seo_score', $seo_score);
+        
+        wp_send_json_success([
+            'message' => __('Content saved successfully as draft', 'seo-forge'),
+            'post_id' => $post_id,
+            'edit_url' => admin_url('post.php?post=' . $post_id . '&action=edit'),
+            'view_url' => admin_url('edit.php?post_type=seo_content')
+        ]);
+    }
+    
     // Core Functions
     private function generate_ai_content($topic, $keywords, $length, $type = 'blog') {
         // Try SEO-Forge API first
@@ -1815,6 +1876,65 @@ class SEOForgeComplete {
         return $html;
     }
     
+    // Helper Functions for Content Generation
+    private function generate_meta_title($title, $keywords) {
+        $meta_title = $title;
+        
+        // Add primary keyword if not already in title
+        if (!empty($keywords)) {
+            $primary_keyword = explode(',', $keywords)[0];
+            $primary_keyword = trim($primary_keyword);
+            
+            if (stripos($title, $primary_keyword) === false) {
+                $meta_title = $primary_keyword . ' - ' . $title;
+            }
+        }
+        
+        // Ensure title is within SEO limits (60 characters)
+        if (strlen($meta_title) > 60) {
+            $meta_title = substr($meta_title, 0, 57) . '...';
+        }
+        
+        return $meta_title;
+    }
+    
+    private function generate_meta_description($content, $keywords) {
+        // Extract first paragraph or first 160 characters
+        $description = wp_strip_all_tags($content);
+        $description = preg_replace('/\s+/', ' ', $description);
+        
+        // Try to get first sentence or paragraph
+        $sentences = explode('.', $description);
+        $first_sentence = trim($sentences[0]);
+        
+        if (strlen($first_sentence) > 20 && strlen($first_sentence) <= 160) {
+            $description = $first_sentence . '.';
+        } else {
+            $description = substr($description, 0, 157) . '...';
+        }
+        
+        // Add primary keyword if not present
+        if (!empty($keywords)) {
+            $primary_keyword = explode(',', $keywords)[0];
+            $primary_keyword = trim($primary_keyword);
+            
+            if (stripos($description, $primary_keyword) === false) {
+                // Try to naturally insert keyword
+                $words = explode(' ', $description);
+                if (count($words) > 5) {
+                    array_splice($words, 3, 0, $primary_keyword);
+                    $new_description = implode(' ', $words);
+                    
+                    if (strlen($new_description) <= 160) {
+                        $description = $new_description;
+                    }
+                }
+            }
+        }
+        
+        return $description;
+    }
+    
     // Settings and Options
     private function get_option($key, $default = null) {
         return $this->options[$key] ?? $default;
@@ -1902,6 +2022,47 @@ class SEOForgeComplete {
         
         // Flush rewrite rules
         flush_rewrite_rules();
+    }
+    
+    /**
+     * Show helpful notice on SEO content admin page
+     */
+    public function show_seo_content_notice() {
+        $screen = get_current_screen();
+        
+        if ($screen && $screen->id === 'edit-seo_content') {
+            $seo_content_count = wp_count_posts('seo_content');
+            
+            if ($seo_content_count->publish == 0 && $seo_content_count->draft == 0) {
+                echo '<div class="notice notice-info is-dismissible">';
+                echo '<p><strong>' . __('Welcome to SEO Content Management!', 'seo-forge') . '</strong></p>';
+                echo '<p>' . __('You haven\'t created any SEO content yet. Here\'s how to get started:', 'seo-forge') . '</p>';
+                echo '<ol>';
+                echo '<li>' . sprintf(__('Go to <a href="%s">Content Generator</a> to create AI-powered content', 'seo-forge'), admin_url('admin.php?page=seo-forge&tab=generator')) . '</li>';
+                echo '<li>' . __('Or click "Add New Content" above to create content manually', 'seo-forge') . '</li>';
+                echo '<li>' . sprintf(__('Check out the <a href="%s">Dashboard</a> for SEO insights', 'seo-forge'), admin_url('admin.php?page=seo-forge')) . '</li>';
+                echo '</ol>';
+                echo '<p><a href="' . admin_url('admin.php?page=seo-forge&tab=generator') . '" class="button button-primary">' . __('Generate Your First Content', 'seo-forge') . '</a></p>';
+                echo '</div>';
+            }
+        }
+    }
+    
+    /**
+     * Customize the views on SEO content admin page
+     */
+    public function customize_seo_content_views($views) {
+        $seo_content_count = wp_count_posts('seo_content');
+        
+        if ($seo_content_count->publish == 0 && $seo_content_count->draft == 0) {
+            $views['getting_started'] = sprintf(
+                '<a href="%s" class="button button-primary" style="margin-left: 10px;">%s</a>',
+                admin_url('admin.php?page=seo-forge&tab=generator'),
+                __('🚀 Generate Your First Content', 'seo-forge')
+            );
+        }
+        
+        return $views;
     }
 }
 
