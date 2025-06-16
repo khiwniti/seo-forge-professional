@@ -1,0 +1,55 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Build files
+/build/
+/dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/logs/
+
+# Cache
+/cache/
+*.cache
+
+# Coverage reports
+/coverage/
+/phpunit-coverage/
+
+# Temporary files
+*.tmp
+*.temp
+
+# WordPress specific
+wp-config.php
+wp-content/uploads/
+wp-content/cache/
+
+# Plugin specific
+/uploads/
+/backups/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Composer
+composer.lock
+
+# NPM
+package-lock.json
+yarn.lock

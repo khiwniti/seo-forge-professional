@@ -1,0 +1,253 @@
+# Thai translation for SEO-Forge
+# Copyright (C) 2024 SEO-Forge Team
+# This file is distributed under the same license as the SEO-Forge package.
+msgid ""
+msgstr ""
+"Project-Id-Version: SEO-Forge 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/seo-forge\n"
+"POT-Creation-Date: 2024-01-01 00:00:00+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2024-01-01 00:00:00+00:00\n"
+"Last-Translator: SEO-Forge Team\n"
+"Language-Team: Thai\n"
+"Language: th\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Universal SEO WordPress plugin with blog generator, content creation, and draft management. Supports Thai/English languages."
+msgstr "ปลั๊กอิน WordPress SEO ที่ครอบคลุมพร้อมเครื่องมือสร้างบล็อก การสร้างเนื้อหา และการจัดการร่าง รองรับภาษาไทย/อังกฤษ"
+
+msgid "SEO-Forge"
+msgstr "SEO-Forge"
+
+msgid "Blog Generator"
+msgstr "เครื่องมือสร้างบล็อก"
+
+msgid "Draft Manager"
+msgstr "ตัวจัดการร่าง"
+
+msgid "You do not have sufficient permissions to access this page."
+msgstr "คุณไม่มีสิทธิ์เพียงพอในการเข้าถึงหน้านี้"
+
+msgid "Keyword is required."
+msgstr "จำเป็นต้องใส่คำค้นหา"
+
+msgid "Blog content generated successfully!"
+msgstr "สร้างเนื้อหาบล็อกสำเร็จแล้ว!"
+
+msgid "Failed to generate blog content."
+msgstr "ไม่สามารถสร้างเนื้อหาบล็อกได้"
+
+msgid "Draft deleted successfully!"
+msgstr "ลบร่างสำเร็จแล้ว!"
+
+msgid "Failed to delete draft."
+msgstr "ไม่สามารถลบร่างได้"
+
+msgid "Draft published successfully!"
+msgstr "เผยแพร่ร่างสำเร็จแล้ว!"
+
+msgid "Failed to publish draft."
+msgstr "ไม่สามารถเผยแพร่ร่างได้"
+
+msgid "Generating..."
+msgstr "กำลังสร้าง..."
+
+msgid "Success!"
+msgstr "สำเร็จ!"
+
+msgid "Error occurred. Please try again."
+msgstr "เกิดข้อผิดพลาด โปรดลองอีกครั้ง"
+
+msgid "Are you sure you want to delete this draft?"
+msgstr "คุณแน่ใจหรือไม่ว่าต้องการลบร่างนี้?"
+
+msgid "Are you sure you want to publish this draft?"
+msgstr "คุณแน่ใจหรือไม่ว่าต้องการเผยแพร่ร่างนี้?"
+
+msgid "Language:"
+msgstr "ภาษา:"
+
+msgid "English"
+msgstr "อังกฤษ"
+
+msgid "ไทย (Thai)"
+msgstr "ไทย (Thai)"
+
+msgid "Total Drafts"
+msgstr "ร่างทั้งหมด"
+
+msgid "Pending Drafts"
+msgstr "ร่างที่รอดำเนินการ"
+
+msgid "Published Posts"
+msgstr "โพสต์ที่เผยแพร่แล้ว"
+
+msgid "Total Posts"
+msgstr "โพสต์ทั้งหมด"
+
+msgid "Welcome to SEO-Forge"
+msgstr "ยินดีต้อนรับสู่ SEO-Forge"
+
+msgid "SEO-Forge is your ultimate WordPress SEO plugin with powerful blog generation capabilities. Generate high-quality content and images from keywords, manage your drafts, and publish when ready."
+msgstr "SEO-Forge คือปลั๊กอิน WordPress SEO ที่สมบูรณ์แบบพร้อมความสามารถในการสร้างบล็อกที่ทรงพลัง สร้างเนื้อหาและรูปภาพคุณภาพสูงจากคำค้นหา จัดการร่างของคุณ และเผยแพร่เมื่อพร้อม"
+
+msgid "Quick Actions"
+msgstr "การดำเนินการด่วน"
+
+msgid "Generate New Blog Post"
+msgstr "สร้างโพสต์บล็อกใหม่"
+
+msgid "Manage Drafts"
+msgstr "จัดการร่าง"
+
+msgid "Features"
+msgstr "คุณสมบัติ"
+
+msgid "Multi-language support (Thai/English)"
+msgstr "รองรับหลายภาษา (ไทย/อังกฤษ)"
+
+msgid "AI-powered content generation"
+msgstr "การสร้างเนื้อหาด้วย AI"
+
+msgid "Automatic image generation"
+msgstr "การสร้างรูปภาพอัตโนมัติ"
+
+msgid "Draft management system"
+msgstr "ระบบจัดการร่าง"
+
+msgid "SEO optimization"
+msgstr "การปรับปรุง SEO"
+
+msgid "No license restrictions"
+msgstr "ไม่มีข้อจำกัดด้านลิขสิทธิ์"
+
+msgid "Recent Activity"
+msgstr "กิจกรรมล่าสุด"
+
+msgid "Keyword"
+msgstr "คำค้นหา"
+
+msgid "Title"
+msgstr "หัวข้อ"
+
+msgid "Language"
+msgstr "ภาษา"
+
+msgid "Status"
+msgstr "สถานะ"
+
+msgid "Created"
+msgstr "สร้างเมื่อ"
+
+msgid "ago"
+msgstr "ที่แล้ว"
+
+msgid "View All Drafts"
+msgstr "ดูร่างทั้งหมด"
+
+msgid "No drafts yet. Generate your first blog post to get started!"
+msgstr "ยังไม่มีร่าง สร้างโพสต์บล็อกแรกของคุณเพื่อเริ่มต้น!"
+
+msgid "Generate Blog Content"
+msgstr "สร้างเนื้อหาบล็อก"
+
+msgid "Enter a keyword to generate a complete blog post with title, content, and featured image. The content will be saved as a draft for your review before publishing."
+msgstr "ใส่คำค้นหาเพื่อสร้างโพสต์บล็อกที่สมบูรณ์พร้อมหัวข้อ เนื้อหา และรูปภาพหลัก เนื้อหาจะถูกบันทึกเป็นร่างเพื่อให้คุณตรวจสอบก่อนเผยแพร่"
+
+msgid "Enter your target keyword..."
+msgstr "ใส่คำค้นหาเป้าหมายของคุณ..."
+
+msgid "Enter the main keyword you want to create content about. This will be used to generate the title, content, and image."
+msgstr "ใส่คำค้นหาหลักที่คุณต้องการสร้างเนื้อหา สิ่งนี้จะถูกใช้ในการสร้างหัวข้อ เนื้อหา และรูปภาพ"
+
+msgid "Content Language"
+msgstr "ภาษาเนื้อหา"
+
+msgid "Select the language for the generated content."
+msgstr "เลือกภาษาสำหรับเนื้อหาที่สร้างขึ้น"
+
+msgid "How It Works"
+msgstr "วิธีใช้งาน"
+
+msgid "Enter your target keyword in the form above"
+msgstr "ใส่คำค้นหาเป้าหมายของคุณในฟอร์มด้านบน"
+
+msgid "Select the language for your content"
+msgstr "เลือกภาษาสำหรับเนื้อหาของคุณ"
+
+msgid "Click \"Generate Blog Content\" to create your post"
+msgstr "คลิก \"สร้างเนื้อหาบล็อก\" เพื่อสร้างโพสต์ของคุณ"
+
+msgid "Review the generated draft in the Draft Manager"
+msgstr "ตรวจสอบร่างที่สร้างขึ้นในตัวจัดการร่าง"
+
+msgid "Edit if needed and publish when ready"
+msgstr "แก้ไขหากจำเป็นและเผยแพร่เมื่อพร้อม"
+
+msgid "Tips for Best Results"
+msgstr "เคล็ดลับสำหรับผลลัพธ์ที่ดีที่สุด"
+
+msgid "Use specific, targeted keywords rather than broad terms"
+msgstr "ใช้คำค้นหาที่เฉพาะเจาะจงแทนคำทั่วไป"
+
+msgid "Consider long-tail keywords for better SEO results"
+msgstr "พิจารณาคำค้นหาแบบ long-tail เพื่อผลลัพธ์ SEO ที่ดีกว่า"
+
+msgid "Review and edit generated content to match your brand voice"
+msgstr "ตรวจสอบและแก้ไขเนื้อหาที่สร้างขึ้นให้เข้ากับเสียงของแบรนด์คุณ"
+
+msgid "Add your own insights and expertise to the generated content"
+msgstr "เพิ่มข้อมูลเชิงลึกและความเชี่ยวชาญของคุณเองในเนื้อหาที่สร้างขึ้น"
+
+msgid "Manage Your Drafts"
+msgstr "จัดการร่างของคุณ"
+
+msgid "Generate New Post"
+msgstr "สร้างโพสต์ใหม่"
+
+msgid "Review, edit, and publish your generated blog drafts. You can preview content, make edits, and publish when ready."
+msgstr "ตรวจสอบ แก้ไข และเผยแพร่ร่างบล็อกที่สร้างขึ้น คุณสามารถดูตัวอย่างเนื้อหา แก้ไข และเผยแพร่เมื่อพร้อม"
+
+msgid "Actions"
+msgstr "การดำเนินการ"
+
+msgid "Preview"
+msgstr "ดูตัวอย่าง"
+
+msgid "Publish"
+msgstr "เผยแพร่"
+
+msgid "Delete"
+msgstr "ลบ"
+
+msgid "Excerpt:"
+msgstr "ข้อความสั้น:"
+
+msgid "Content Preview:"
+msgstr "ตัวอย่างเนื้อหา:"
+
+msgid "Meta Information:"
+msgstr "ข้อมูลเมตา:"
+
+msgid "Updated:"
+msgstr "อัปเดต:"
+
+msgid "Previous page"
+msgstr "หน้าก่อนหน้า"
+
+msgid "of"
+msgstr "จาก"
+
+msgid "Next page"
+msgstr "หน้าถัดไป"
+
+msgid "No Drafts Found"
+msgstr "ไม่พบร่าง"
+
+msgid "You haven't created any drafts yet. Generate your first blog post to get started!"
+msgstr "คุณยังไม่ได้สร้างร่างใดๆ สร้างโพสต์บล็อกแรกของคุณเพื่อเริ่มต้น!"
+
+msgid "Generate Your First Post"
+msgstr "สร้างโพสต์แรกของคุณ"

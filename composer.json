@@ -1,0 +1,71 @@
+{
+    "name": "seo-forge/seo-forge-professional",
+    "description": "Professional WordPress SEO plugin with AI-powered content generation and advanced analytics",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "version": "2.0.0",
+    "authors": [
+        {
+            "name": "SEO-Forge Team",
+            "email": "team@seo-forge.bitebase.app",
+            "homepage": "https://seo-forge.bitebase.app"
+        }
+    ],
+    "keywords": [
+        "wordpress",
+        "seo",
+        "ai",
+        "content-generation",
+        "analytics",
+        "optimization"
+    ],
+    "homepage": "https://seo-forge.bitebase.app",
+    "support": {
+        "issues": "https://github.com/seo-forge/seo-forge-professional/issues",
+        "source": "https://github.com/seo-forge/seo-forge-professional",
+        "docs": "https://seo-forge.bitebase.app/docs"
+    },
+    "require": {
+        "php": ">=8.0",
+        "ext-json": "*",
+        "ext-curl": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "squizlabs/php_codesniffer": "^3.7",
+        "phpstan/phpstan": "^1.10",
+        "wp-coding-standards/wpcs": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SEOForge\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SEOForge\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html coverage",
+        "phpcs": "phpcs --standard=WordPress src/",
+        "phpcbf": "phpcbf --standard=WordPress src/",
+        "phpstan": "phpstan analyse src/ --level=8",
+        "quality": [
+            "@phpcs",
+            "@phpstan"
+        ],
+        "fix": "@phpcbf"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

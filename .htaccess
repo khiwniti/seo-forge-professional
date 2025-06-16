@@ -1,0 +1,19 @@
+# Protect plugin files
+<Files "*.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "seo-forge.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
+# Protect sensitive files
+<FilesMatch "\.(json|xml|md|txt|log)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protect directories
+Options -Indexes
