@@ -123,7 +123,8 @@ class SEOForgeComplete {
     }
     
     public function enqueue_admin_scripts($hook) {
-        if (strpos($hook, 'seo-forge') !== false) {
+        // Load scripts on SEO Forge admin pages
+        if (strpos($hook, 'seo-forge') !== false || $hook === 'toplevel_page_seo-forge') {
             wp_enqueue_script('seo-forge-admin', SEO_FORGE_URL . 'assets/js/seo-forge-admin.js', ['jquery', 'wp-api'], SEO_FORGE_VERSION, true);
             wp_enqueue_style('seo-forge-admin', SEO_FORGE_URL . 'assets/css/seo-forge-admin.css', [], SEO_FORGE_VERSION);
             
@@ -586,7 +587,14 @@ class SEOForgeComplete {
     
     // Main Admin Page with Tabs
     public function admin_main_page() {
-        $current_tab = $_GET['tab'] ?? 'dashboard';
+        $current_tab = sanitize_text_field($_GET['tab'] ?? 'dashboard');
+        
+        echo '<div class="wrap">';
+        
+        // Debug information (remove in production)
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            echo '<div class="notice notice-info"><p>SEO Forge Debug: Plugin loaded successfully. Current tab: ' . esc_html($current_tab) . '</p></div>';
+        }
         
         if (isset($_POST['submit']) && $current_tab === 'settings') {
             check_admin_referer('seo_forge_settings');
@@ -595,8 +603,6 @@ class SEOForgeComplete {
         }
         
         $this->render_admin_header('SEO Forge Professional');
-        
-        echo '<div class="wrap">';
         
         // Tab Navigation
         echo '<nav class="nav-tab-wrapper wp-clearfix">';
@@ -647,7 +653,8 @@ class SEOForgeComplete {
         // Stats cards
         echo '<div class="seo-forge-stats-grid">';
         
-        $total_posts = wp_count_posts()->publish;
+        $post_counts = wp_count_posts();
+        $total_posts = isset($post_counts->publish) ? $post_counts->publish : 0;
         $seo_optimized = $this->count_seo_optimized_posts();
         $avg_seo_score = $this->get_average_seo_score();
         $total_keywords = $this->count_tracked_keywords();
@@ -2066,13 +2073,8 @@ class SEOForgeComplete {
     }
 }
 
-// Initialize the plugin
-function seo_forge_init() {
-    return SEOForgeComplete::getInstance();
-}
-
-// Start the plugin
-add_action('plugins_loaded', 'seo_forge_init');
+// Initialize the plugin immediately when this file is loaded
+SEOForgeComplete::getInstance();
 
 // AJAX handler for frontend tracking
 add_action('wp_ajax_nopriv_seo_forge_track_pageview', 'seo_forge_track_pageview');

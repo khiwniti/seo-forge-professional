@@ -8,6 +8,17 @@
    Main Layout & Header
    ========================================================================== */
 
+/* Ensure main wrapper displays correctly */
+.wrap {
+    margin: 10px 20px 0 2px;
+}
+
+/* SEO Forge specific wrapper styles */
+.seo-forge-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
 /* Tab Navigation */
 .seo-forge-tab-content {
     margin-top: 20px;

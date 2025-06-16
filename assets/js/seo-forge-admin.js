@@ -19,11 +19,28 @@
         }
 
         init() {
-            this.bindEvents();
-            this.initCharacterCounters();
-            this.initCharts();
-            this.initTooltips();
-            this.loadAnalyticsData();
+            try {
+                this.bindEvents();
+                this.initCharacterCounters();
+                this.initCharts();
+                this.initTooltips();
+                
+                // Only load analytics data if we're on the analytics tab
+                const currentTab = this.getCurrentTab();
+                if (currentTab === 'analytics') {
+                    this.loadAnalyticsData();
+                }
+            } catch (error) {
+                console.error('SEO Forge Admin initialization error:', error);
+            }
+        }
+
+        /**
+         * Get current tab from URL
+         */
+        getCurrentTab() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('tab') || 'dashboard';
         }
 
         /**
@@ -78,24 +95,32 @@
          * Update title character counter
          */
         updateTitleCounter() {
-            const title = $('#seo_forge_meta_title').val() || '';
+            const titleField = $('#seo_forge_meta_title');
             const counter = $('#title-counter');
-            const length = title.length;
             
-            counter.text(length);
-            counter.parent().toggleClass('over-limit', length > 60);
+            if (titleField.length && counter.length) {
+                const title = titleField.val() || '';
+                const length = title.length;
+                
+                counter.text(length);
+                counter.parent().toggleClass('over-limit', length > 60);
+            }
         }
 
         /**
          * Update description character counter
          */
         updateDescriptionCounter() {
-            const description = $('#seo_forge_meta_description').val() || '';
+            const descriptionField = $('#seo_forge_meta_description');
             const counter = $('#description-counter');
-            const length = description.length;
             
-            counter.text(length);
-            counter.parent().toggleClass('over-limit', length > 160);
+            if (descriptionField.length && counter.length) {
+                const description = descriptionField.val() || '';
+                const length = description.length;
+                
+                counter.text(length);
+                counter.parent().toggleClass('over-limit', length > 160);
+            }
         }
 
         /**
